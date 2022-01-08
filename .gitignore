@@ -24,3 +24,7 @@ expkg-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+.editorconfig
+
+/zig-*
