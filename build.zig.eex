@@ -1,0 +1,34 @@
+const std = @import("std");
+const builtin = @import("builtin");
+
+var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+var allocator = arena.allocator();
+
+pub fn build(b: *std.build.Builder) !void {
+    const target = b.standardTargetOptions(.{});
+    const mode = b.standardReleaseOptions();
+    const exe = b.addExecutable("<%= @executable_name || @release.name %>", "main.zig");
+
+    const options = b.addOptions();
+    exe.addOptions("build_options", options);
+    options.addOption([]const u8, "RELEASE_NAME", "<%= @release.name %>");
+
+    exe.setTarget(target);
+    exe.setBuildMode(mode);
+
+    if (target.isWindows()) {
+        exe.linkSystemLibrary("c");
+        exe.addIncludeDir("src/");
+    }
+
+    exe.install();
+
+    const run_cmd = exe.run();
+    run_cmd.step.dependOn(b.getInstallStep());
+    if (b.args) |args| {
+        run_cmd.addArgs(args);
+    }
+
+    const run_step = b.step("run", "Run the app");
+    run_step.dependOn(&run_cmd.step);
+}
