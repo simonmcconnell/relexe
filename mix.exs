@@ -1,7 +1,7 @@
 defmodule Expkg.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version String.trim(File.read!("VERSION"))
   @source_url "https://github.com/simonmcconnell/expkg"
 
   def project do
@@ -29,12 +29,13 @@ defmodule Expkg.MixProject do
 
   def application do
     [
-      extra_applications: [:logger],
-      mod: {Expkg, []}
+      extra_applications: [:logger, :eex]
     ]
   end
 
   defp deps do
-    []
+    [
+      {:burrito, github: "burrito-elixir/burrito"}
+    ]
   end
 end
