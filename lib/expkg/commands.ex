@@ -68,20 +68,7 @@ defmodule Expkg.Commands do
           | :daemon
           | custom_command
 
-  def default_commands do
-    [
-      :start,
-      :start_iex,
-      :service,
-      :eval,
-      :rpc,
-      :remote,
-      :restart,
-      :stop,
-      :pid,
-      :version
-    ]
-  end
+  def default_commands, do: ~w(start start_iex service eval rpc remote restart stop pid version)a
 
   @spec parse([command_option], release_name :: String.t(), os) :: [t()]
         when os: :windows | :darwin | :linux_musl | :linux
@@ -94,17 +81,6 @@ defmodule Expkg.Commands do
   defp do_parse([command | commands], parsed, release_name, os) do
     parsed_command = parse_command(command, release_name, os)
     do_parse(commands, [parsed_command | parsed], release_name, os)
-    # case parse_command(command, release_name, os) do
-    #   :skip ->
-    #     do_parse(commands, parsed, release_name, os)
-
-    #   # {:error, reason} ->
-    #   #   raise ArgumentError,
-    #   #     message: "failed to parse command '#{inspect(command)}': #{inspect(reason)}"
-
-    #   parsed_command ->
-    #     do_parse(commands, [parsed_command | parsed], release_name, os)
-    # end
   end
 
   defp parse_command(command, release_name, os) when is_list(command) do
@@ -207,7 +183,8 @@ defmodule Expkg.Commands do
     }
   end
 
-  defp parse_command(:service, release_name, :windows) do
+  defp parse_command(service_or_daemon, release_name, :windows)
+       when service_or_daemon in [:daemon, :service] do
     %CompoundCommand{
       name: "service",
       help: "Add, remove, start or stop the #{release_name} Windows Service",
@@ -220,9 +197,8 @@ defmodule Expkg.Commands do
     }
   end
 
-  defp parse_command(:service, _release_name, _os), do: []
-
-  defp parse_command(:daemon, _release_name, os) when os in [:darwin, :linux_musl, :linux] do
+  defp parse_command(service_or_daemon, _release_name, _os)
+       when service_or_daemon in [:daemon, :service] do
     raise("not implemented")
   end
 
@@ -230,10 +206,19 @@ defmodule Expkg.Commands do
        when is_binary(fn_string),
        do: :ok
 
-  defp validate_rpc_or_eval_command!({m, f, a}, _rpc_or_eval)
-       when is_atom(m) and is_atom(f) and is_list(a),
-       do: :ok
+  defp validate_rpc_or_eval_command!({m, f, a}, rpc_or_eval)
+       when is_atom(m) and is_atom(f) and is_list(a) do
+    if Enum.all?(a, fn arg -> is_binary(arg) or is_atom(arg) end) do
+      :ok
+    else
+      raise ArgumentError,
+        message: "#{rpc_or_eval} argument names must be strings or atoms"
+    end
+  end
 
-  defp validate_rpc_or_eval_command!(_, rpc_or_eval),
-    do: raise(ArgumentError, message: "#{rpc_or_eval} commands must be a string or MFA tuple")
+  defp validate_rpc_or_eval_command!(_, rpc_or_eval) do
+    raise ArgumentError,
+      message:
+        "#{rpc_or_eval} commands must be a string or {Module, :function, [arg_names]} tuple"
+  end
 end

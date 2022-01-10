@@ -24,7 +24,7 @@ defmodule ExpkgTest do
                    %RpcCommand{
                      name: "one",
                      help: "Who is someone?",
-                     expr: {Some, :one, [who: :string]}
+                     expr: {Some, :one, [:who]}
                    }
                  ]
                }
@@ -36,7 +36,7 @@ defmodule ExpkgTest do
                      help: "Do stuff",
                      commands: [
                        [name: "thing", help: "Do something", eval: "Some.thing()"],
-                       [name: "one", help: "Who is someone?", rpc: {Some, :one, [who: :string]}]
+                       [name: "one", help: "Who is someone?", rpc: {Some, :one, [:who]}]
                      ]
                    ]
                  ],
@@ -45,4 +45,11 @@ defmodule ExpkgTest do
                )
     end
   end
+
+  describe "Help.generate/?" do
+    test "generates help" do
+      assert false == true
+    end
+  end
+
 end
