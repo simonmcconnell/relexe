@@ -28,3 +28,5 @@ expkg-*.tar
 .editorconfig
 
 /zig-*
+
+.iex.exs

@@ -107,6 +107,13 @@ defmodule Expkg.Commands do
         }
 
       Keyword.has_key?(command, :commands) ->
+        nested_compound_commands? =
+          Enum.any?(command[:commands], &Keyword.has_key?(&1, :commands))
+
+        if nested_compound_commands? do
+          raise ArgumentError, message: "compound commands cannot be nested"
+        end
+
         %CompoundCommand{
           name: name,
           help: help,
