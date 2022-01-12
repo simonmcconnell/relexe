@@ -30,3 +30,7 @@ expkg-*.tar
 /zig-*
 
 .iex.exs
+
+# build artefacts that shouldn't be in this directory
+build.zig
+/src/main.zig

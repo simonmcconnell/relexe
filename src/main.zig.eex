@@ -30,6 +30,9 @@ pub fn main() anyerror!void {
 
     const args = try process.argsAlloc(allocator);
 
+    const command = args[1];
+    const command_args = args[2..];
+    
     // load release information from release files, .env and environment
     var r = try release.init(allocator, args[0], command);
 
@@ -43,8 +46,6 @@ pub fn main() anyerror!void {
         return;
     }
 
-    const command = args[1];
-    const command_args = args[2..];
 
     // CLI
     if (isHelp(command)) {
@@ -78,30 +79,37 @@ pub fn main() anyerror!void {
             } else if (mem.eql(u8, command_args[0], "help")) {
                 try service.help(allocator, r);
             } else {
-                try stdout.writeAll(usage_service);
+                try stdout.writeAll(usage("service"));
             }
         } else {
-            try stdout.writeAll(usage_service);
+            try stdout.writeAll(usage("service"));
         }
     <%= if @allow_eval do %>
     } else if (mem.eql(u8, command, "eval")) {
-        if (command_args.len == 1) try elixir.eval(allocator, r, command_args[0..])<%= if @show_eval do %> else try stdout.writeAll(usage_eval)<% end %>;
+        if (command_args.len == 1) try elixir.eval(allocator, r, command_args[0..])<%= if :eval not in @hide do %> else try stdout.writeAll(usage_eval)<% end %>;
     <% end %>
     <%= if @allow_rpc do %>
     } else if (mem.eql(u8, command, "rpc")) {
-        if (command_args.len == 1) try elixir.rpc(allocator, r, command_args[0])<%= if @show_rpc do %> else try stdout.writeAll(usage_rpc)<% end %>;
+        if (command_args.len == 1) try elixir.rpc(allocator, r, command_args[0])<%= if :rpc not in @hide do %> else try stdout.writeAll(usage_rpc)<% end %>;
     <% end %>
     } else if (mem.eql(u8, command, "version")) {
         try stdout.print("{s} {s}", .{ r.name, r.vsn });
     }
 }
 
-fn usage(command: []const u8) {
+fn usage(command: []const u8) []const u8 {
     if (isHelp(command)) {
-        <%= @help["help"] %>
+        return <%= @help["help"] %>
     <%= for command <- @commands do %>
     } else if (mem.eql(u8, command, "<%= command.name %>")) {
-        <%= @help[command.name] || @help["help"] %>
+        return <%= @help[command.name] || @help["help"] %>
     <% end %>
+    } else {
+        return <%= @help["help"] %>
     }
+}
+
+// Determines if `command` is help, -h, /?, or --help.
+fn isHelp(command: []const u8) bool {
+    return mem.eql(u8, command, "help") or mem.eql(u8, command, "-h") or mem.eql(u8, command, "--help") or mem.eql(u8, command, "/?");
 }

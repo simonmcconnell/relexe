@@ -1,41 +1,56 @@
-defmodule Expkg.Help do
-  alias Expkg.Commands.Command
-  alias Expkg.Commands.CompoundCommand
+defmodule Expkg.Steps.Build.PackAndBuild.Help do
+  @moduledoc "Generate help (in the form of multi-line `zig` strings) for the package."
+  alias Burrito.Builder.Context
+  alias Burrito.Builder.Log
+
+  alias Expkg.Steps.Build.PackAndBuild.Commands.{
+    Command,
+    CompoundCommand,
+    EvalCommand,
+    RpcCommand
+  }
 
   @args "[args]"
   @command "<command>"
+  @expr "<expr>"
 
-  @doc "Generate help (in the form of multi-line `zig` strings) for the package."
-  @spec generate(Expkg.t()) :: Expkg.t()
-  def generate(%Expkg{} = expkg) do
-    executable_name = expkg.executable_name || expkg.release.name
-    command_width = command_width(expkg.commands)
+  def generate(%Context{} = context, commands) do
+    Log.info(:step, "Generating CLI help")
 
-    {commands_lines, help} =
-      expkg
-      |> remove_hidden_commands()
-      |> commands_help(executable_name, command_width)
+    options = context.mix_release.options[:expkg] || []
+    executable_name = options[:executable_name] || Atom.to_string(context.mix_release.name)
+
+    {commands_help, help} =
+      commands
+      |> drop_hidden_commands(options[:hide] || [])
+      |> commands_help(executable_name)
 
     usage = """
-    \\\\Usage: #{executable_name} #{if expkg.no_args_command == :start, do: "[command]", else: @command} #{@args}
+    \\\\Usage: #{executable_name} #{if options[:no_args_command] == :start, do: "[command]", else: @command} #{@args}
     \\\\
     \\\\Commands:
     \\\\
-    #{Enum.join(commands_lines, "\n")}
+    #{Enum.join(commands_help, "\n")}
     \\\\
     \\\\Type '#{executable_name} help <command>' to get help for a specific command.
+    ;
     """
 
-    %Expkg{expkg | help: Map.put(help, "help", usage)}
+    Map.put(help, "help", usage)
   end
 
-  def commands_help(commands, executable_name, command_width) do
+  def commands_help(commands, executable_name) do
+    command_width = command_width(commands)
+
     Enum.map_reduce(commands, %{}, fn command, acc ->
       {usage_extra, command_extra} =
         case command do
+          %{name: rpc_or_eval} when rpc_or_eval in ~w(rpc eval) -> {"", "\"expr\""}
           %CompoundCommand{} -> {"#{@command} #{@args}", @command}
           %Command{args: []} -> {"", ""}
           %Command{args: _args} -> {@args, @args}
+          %RpcCommand{} -> {"", ""}
+          %EvalCommand{} -> {"", ""}
           %{expr: {_, _, []}} -> {"", ""}
           %{expr: {_, _, args}} -> {@args, args |> Enum.map(&"<#{&1}>") |> Enum.join(" ")}
           _ -> {"", ""}
@@ -47,19 +62,27 @@ defmodule Expkg.Help do
       {sub_commands_lines, _sub_command_help} =
         case command do
           %CompoundCommand{commands: cmds} ->
-            commands_help(cmds, executable_name, command_width(cmds))
+            commands_help(cmds, executable_name)
 
           _ ->
             {[], nil}
         end
 
-      command_help = """
-      \\\\Usage: #{executable_name} #{command.name} #{usage_extra}
-      \\\\
-      \\\\Commands:
-      \\\\
-      #{Enum.join(sub_commands_lines, "\n")}
-      """
+      command_help =
+        case command do
+          %CompoundCommand{} ->
+            """
+            \\\\Usage: #{executable_name} #{command.name} #{usage_extra}
+            \\\\
+            \\\\Commands:
+            \\\\
+            #{Enum.join(sub_commands_lines, "\n")}
+            ;
+            """
+
+          _ ->
+            "\"#{command.help}\\nUsage: #{executable_name} #{command.name} #{usage_extra}\";"
+        end
 
       {command_help_line, Map.put(acc, command.name, command_help)}
     end)
@@ -91,9 +114,9 @@ defmodule Expkg.Help do
     end) + @spaces_after_command
   end
 
-  defp remove_hidden_commands(%{hide: [], commands: commands}), do: commands
+  defp drop_hidden_commands(commands, []), do: commands
 
-  defp remove_hidden_commands(%{hide: hidden_commands, commands: commands}) do
+  defp drop_hidden_commands(commands, hidden_commands) do
     Enum.reject(commands, fn command -> command.name in hidden_commands end)
   end
 end

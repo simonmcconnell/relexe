@@ -1,4 +1,4 @@
-defmodule Expkg.Commands do
+defmodule Expkg.Steps.Build.PackAndBuild.Commands do
   defmodule Command do
     @enforce_keys [:name, :help]
     defstruct [:name, :help, args: []]
@@ -44,6 +44,7 @@ defmodule Expkg.Commands do
   end
 
   alias __MODULE__.{Command, CompoundCommand, EvalCommand, RpcCommand}
+  alias Burrito.Builder.Log
 
   @type t :: Command.t() | CompoundCommand.t() | EvalCommand.t() | RpcCommand.t()
   @type arg_type :: :string | :integer | :float
@@ -68,11 +69,12 @@ defmodule Expkg.Commands do
           | :daemon
           | custom_command
 
-  def default_commands, do: ~w(start start_iex service eval rpc remote restart stop pid version)a
+  def default, do: ~w(start start_iex service eval rpc remote restart stop pid version)a
 
   @spec parse([command_option], release_name :: String.t(), os) :: [t()]
-        when os: :windows | :darwin | :linux_musl | :linux
+        when os: :windows | :darwin | :linux
   def parse(commands, release_name, os) when is_list(commands) do
+    Log.info(:step, "Parsing CLI commands")
     do_parse(commands, [], release_name, os)
   end
 

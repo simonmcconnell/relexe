@@ -11,10 +11,10 @@ defmodule Simple.MixProject do
       deps: deps(),
       releases: [
         simple: [
-          steps: [:assemble, &Expkg.assemble/1],
+          steps: [:assemble, &Expkg.pack/1],
           expkg: [
             executable_name: "simple-cli",
-            no_args_command: "start",
+            no_args_command: :start,
             commands: [
               :start,
               :stop,
@@ -38,7 +38,8 @@ defmodule Simple.MixProject do
                 rpc: "Simple.break_something()"
               ]
             ],
-            hide: [:eval, :rpc, :remote]
+            hide: [:eval, :rpc, :remote],
+            targets: [windows: [os: :windows, cpu: :x86_64]]
           ]
         ]
       ]

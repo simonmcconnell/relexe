@@ -1,7 +1,7 @@
 defmodule Expkg.MixProject do
   use Mix.Project
 
-  @version String.trim(File.read!("VERSION"))
+  @version File.read!("VERSION") |> String.trim()
   @source_url "https://github.com/simonmcconnell/expkg"
 
   def project do
@@ -10,11 +10,12 @@ defmodule Expkg.MixProject do
       version: @version,
       elixir: "~> 1.13",
       deps: deps(),
-      description: "Generate release executables",
+      description: "Generate custom release executables (not scripts)",
       package: [
         links: %{
           "GitHub" => @source_url,
-          "Zig" => "https://ziglang.org"
+          "Zig" => "https://ziglang.org",
+          "Burrito" => "https://github.com/burrito-elixir/burrito"
         },
         licenses: ["MIT"]
       ],
@@ -35,7 +36,7 @@ defmodule Expkg.MixProject do
 
   defp deps do
     [
-      {:burrito, github: "burrito-elixir/burrito"}
+      {:burrito, github: "simonmcconnell/burrito", ref: "f009f35"}
     ]
   end
 end

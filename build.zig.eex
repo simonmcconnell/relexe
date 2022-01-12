@@ -7,11 +7,11 @@ var allocator = arena.allocator();
 pub fn build(b: *std.build.Builder) !void {
     const target = b.standardTargetOptions(.{});
     const mode = b.standardReleaseOptions();
-    const exe = b.addExecutable("<%= @executable_name || @release.name %>", "main.zig");
+    const exe = b.addExecutable("<%= @executable_name %>", "src/main.zig");
 
     const options = b.addOptions();
     exe.addOptions("build_options", options);
-    options.addOption([]const u8, "RELEASE_NAME", "<%= @release.name %>");
+    options.addOption([]const u8, "RELEASE_NAME", "<%= @release_name %>");
 
     exe.setTarget(target);
     exe.setBuildMode(mode);

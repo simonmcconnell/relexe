@@ -1,5 +1,5 @@
 %{
-  "burrito": {:git, "https://github.com/burrito-elixir/burrito.git", "ae59253d113f12266177323fe8bbd7dde2a64576", []},
+  "burrito": {:git, "https://github.com/simonmcconnell/burrito.git", "f009f35c5d476d33f05b0c4d737ebade299d7934", [ref: "f009f35"]},
   "castore": {:hex, :castore, "0.1.14", "3f6d7c7c1574c402fef29559d3f1a7389ba3524bc6a090a5e9e6abc3af65dcca", [:mix], [], "hexpm", "b34af542eadb727e6c8b37fdf73e18b2e02eb483a4ea0b52fd500bc23f052b7b"},
   "decimal": {:hex, :decimal, "2.0.0", "a78296e617b0f5dd4c6caf57c714431347912ffb1d0842e998e9792b5642d697", [:mix], [], "hexpm", "34666e9c55dea81013e77d9d87370fe6cb6291d1ef32f46a1600230b1d44f577"},
   "ecto": {:hex, :ecto, "3.7.1", "a20598862351b29f80f285b21ec5297da1181c0442687f9b8329f0445d228892", [:mix], [{:decimal, "~> 1.6 or ~> 2.0", [hex: :decimal, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: true]}, {:telemetry, "~> 0.4 or ~> 1.0", [hex: :telemetry, repo: "hexpm", optional: false]}], "hexpm", "d36e5b39fc479e654cffd4dbe1865d9716e4a9b6311faff799b6f90ab81b8638"},
@@ -11,4 +11,5 @@
   "nimble_pool": {:hex, :nimble_pool, "0.2.4", "1db8e9f8a53d967d595e0b32a17030cdb6c0dc4a451b8ac787bf601d3f7704c3", [:mix], [], "hexpm", "367e8071e137b787764e6a9992ccb57b276dc2282535f767a07d881951ebeac6"},
   "req": {:hex, :req, "0.2.1", "5d4ee7bc6666cd4d77e95f89ce75ca0ca73b6a25eeebbe2e7bc60cdd56d73865", [:mix], [{:finch, "~> 0.9.1", [hex: :finch, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: false]}, {:mime, "~> 1.6 or ~> 2.0", [hex: :mime, repo: "hexpm", optional: false]}, {:nimble_csv, "~> 1.0", [hex: :nimble_csv, repo: "hexpm", optional: true]}], "hexpm", "ababd5c8a334848bde2bc3c2f518df22211c8533d863d15bfefa04796abc3633"},
   "telemetry": {:hex, :telemetry, "1.0.0", "0f453a102cdf13d506b7c0ab158324c337c41f1cc7548f0bc0e130bbf0ae9452", [:rebar3], [], "hexpm", "73bc09fa59b4a0284efb4624335583c528e07ec9ae76aca96ea0673850aec57a"},
+  "typed_struct": {:hex, :typed_struct, "0.2.1", "e1993414c371f09ff25231393b6430bd89d780e2a499ae3b2d2b00852f593d97", [:mix], [], "hexpm", "8f5218c35ec38262f627b2c522542f1eae41f625f92649c0af701a6fab2e11b3"},
 }
