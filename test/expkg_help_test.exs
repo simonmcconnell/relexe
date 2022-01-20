@@ -1,53 +1,121 @@
 defmodule Expkg.HelpTest do
   use ExUnit.Case
-  alias Expkg.Help
-  alias Expkg.Commands.{Command, CompoundCommand, EvalCommand, RpcCommand}
-  doctest Expkg.Help
 
-  describe "Help.generate/?" do
+  alias Burrito.Builder.Context
+  alias Expkg.Steps.Build.PackAndBuild.Help
+
+  alias Expkg.Steps.Build.PackAndBuild.Commands.{
+    Command,
+    CompoundCommand,
+    EvalCommand,
+    RpcCommand
+  }
+
+  doctest Expkg.Steps.Build.PackAndBuild.Help
+
+  describe "Help.generate/2" do
     test "generates help" do
-      expkg = %Expkg{
-        executable_name: "lies-cli",
-        release: %Mix.Release{name: "lies"},
-        commands: [
-          %Command{
-            name: "start",
-            help: "Start lying to me"
-          },
-          %CompoundCommand{
-            name: "some",
-            help: "Do stuff",
-            commands: [
-              %EvalCommand{name: "thing", help: "Do something", expr: "Some.thing()"},
-              %RpcCommand{
-                name: "one",
-                help: "Who is someone?",
-                expr: {Some, :one, [:who]}
-              }
-            ]
-          }
-        ]
+      context = %Context{
+        target: :windows,
+        work_dir: "",
+        self_dir: "",
+        halted: false,
+        mix_release: %Mix.Release{
+          name: "lies",
+          options: [expkg: [executable_name: "lies-cli"]]
+        }
       }
 
-      assert ~S"""
-             \\Usage: lies-cli <command> [args]
-             \\
-             \\Commands:
-             \\
-             \\start           Start lying to me
-             \\some <command>  Do stuff
-             \\
-             \\Type 'lies-cli help <command>' to get help for a specific command.
-             """ == Help.generate(expkg).help["help"]
+      commands = [
+        %Command{
+          name: "talk-to-me",
+          help: "Start lying to me"
+        },
+        %CompoundCommand{
+          name: "some",
+          help: "Do stuff",
+          commands: [
+            %EvalCommand{
+              name: "create-admin",
+              help: "Create administrator",
+              expr: {Accounts, :create_admin, [:username, :password]}
+            },
+            %EvalCommand{name: "thing", help: "Do something", expr: "Some.thing()"},
+            %RpcCommand{
+              name: "who",
+              help: "Who is someone?",
+              expr: {Some, :who, [:someone]}
+            }
+          ]
+        }
+      ]
+
+      help = Help.generate(context, commands)
 
       assert ~S"""
-             \\Usage: lies-cli some <command> [args]
+             \\USAGE:
+             \\  lies-cli <COMMAND>
              \\
-             \\Commands:
+             \\COMMANDS:
+             \\  talk-to-me      Start lying to me
+             \\  some <COMMAND>  Do stuff
              \\
-             \\thing      Do something
-             \\one <who>  Who is someone?
-             """ == Help.generate(expkg).help["some"]
+             \\HELP:
+             \\  help <COMMAND>  Print help for a specific command.
+             ;
+             """ == help["help"]
+
+      assert ~S"""
+             \\Do stuff
+             \\
+             \\USAGE:
+             \\  lies-cli some <COMMAND>
+             \\
+             \\COMMANDS:
+             \\  create-admin <USERNAME> <PASSWORD>  Create administrator
+             \\  thing                               Do something
+             \\  who <SOMEONE>                       Who is someone?
+             ;
+             """ == help["some"]
+    end
+
+    test "generates help when no_args_command = :start" do
+      context = %Context{
+        target: :windows,
+        work_dir: "",
+        self_dir: "",
+        halted: false,
+        mix_release: %Mix.Release{
+          name: "lies",
+          options: [expkg: [executable_name: "lies-cli", no_args_command: :start]]
+        }
+      }
+
+      commands = [
+        %Command{
+          name: "start",
+          help: "Start lies"
+        },
+        %Command{
+          name: "stop",
+          help: "Stop lies"
+        }
+      ]
+
+      help = Help.generate(context, commands)
+
+      assert ~S"""
+             \\USAGE:
+             \\  lies-cli [COMMAND]
+             \\
+             \\COMMANDS:
+             \\  start  Start lies (default)
+             \\  stop   Stop lies
+             \\
+             \\HELP:
+             \\  help <COMMAND>  Print help for a specific command.
+             ;
+             """ == help["help"]
     end
   end
 end

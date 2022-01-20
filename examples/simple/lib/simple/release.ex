@@ -4,6 +4,7 @@ defmodule Simple.Release do
   @app :simple
 
   def create_admin(username, password) do
+    IO.puts("release.create_admin")
     start_app()
     Simple.create_admin(username, password)
   end
@@ -27,12 +28,14 @@ defmodule Simple.Release do
   end
 
   defp start_app do
+    IO.puts("starting app")
     load_app()
     Application.put_env(@app, :minimal, true)
     Application.ensure_all_started(@app)
   end
 
   defp load_app do
+    IO.puts("loading app")
     Application.load(@app)
   end
 

@@ -28,7 +28,7 @@ defmodule Expkg.Steps.Build.PackAndBuild.Commands do
     @type t :: %__MODULE__{
             name: String.t(),
             help: String.t(),
-            expr: String.t()
+            expr: String.t() | Commands.mod_fn_args()
           }
   end
 
@@ -39,7 +39,7 @@ defmodule Expkg.Steps.Build.PackAndBuild.Commands do
     @type t :: %__MODULE__{
             name: String.t(),
             help: String.t(),
-            expr: String.t()
+            expr: String.t() | Commands.mod_fn_args()
           }
   end
 
@@ -52,8 +52,8 @@ defmodule Expkg.Steps.Build.PackAndBuild.Commands do
   @type custom_command_option ::
           {:name, String.t()}
           | {:help, String.t()}
-          | {:eval, String.t() | mfa()}
-          | {:rpc, String.t() | mfa()}
+          | {:eval, String.t() | mod_fn_args()}
+          | {:rpc, String.t() | mod_fn_args()}
   @type custom_command :: [custom_command_option]
   @type command_option ::
           :start
@@ -93,6 +93,7 @@ defmodule Expkg.Steps.Build.PackAndBuild.Commands do
       Keyword.has_key?(command, :rpc) ->
         validate_rpc_or_eval_command!(command[:rpc], :rpc)
 
+        # TODO: commands with args
         %RpcCommand{
           name: name,
           help: help,
@@ -102,6 +103,7 @@ defmodule Expkg.Steps.Build.PackAndBuild.Commands do
       Keyword.has_key?(command, :eval) ->
         validate_rpc_or_eval_command!(command[:eval], :eval)
 
+        # TODO: commands with args
         %EvalCommand{
           name: name,
           help: help,
@@ -173,7 +175,7 @@ defmodule Expkg.Steps.Build.PackAndBuild.Commands do
     %Command{
       name: "eval",
       help: "Executes the given expression on a new, non-booted system",
-      args: ["\"expr\""]
+      args: ["expr"]
     }
   end
 
@@ -181,7 +183,7 @@ defmodule Expkg.Steps.Build.PackAndBuild.Commands do
     %Command{
       name: "rpc",
       help: "Executes the given expression remotely on the running system",
-      args: ["\"expr\""]
+      args: ["expr"]
     }
   end
 
@@ -198,7 +200,7 @@ defmodule Expkg.Steps.Build.PackAndBuild.Commands do
       name: "service",
       help: "Add, remove, start or stop the #{release_name} Windows Service",
       commands: [
-        %Command{name: "add", help: "Add to Windows Services"},
+        %Command{name: "add", help: "Add Windows Service"},
         %Command{name: "remove", help: "Remove the service"},
         %Command{name: "start", help: "Start the service"},
         %Command{name: "stop", help: "Stop the service"}

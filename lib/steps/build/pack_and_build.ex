@@ -61,6 +61,7 @@ defmodule Expkg.Steps.Build.PackAndBuild do
 
     case build_result do
       {_, 0} ->
+        System.cmd("zig", ["fmt", "build.zig", "src"], cd: context.self_dir, into: IO.stream())
         context
 
       _ ->
@@ -81,7 +82,7 @@ defmodule Expkg.Steps.Build.PackAndBuild do
 
     %{
       allow_eval: options[:allow_eval] || true,
-      allow_rpc: options[:allow_eval] || false,
+      allow_rpc: options[:allow_rpc] || true,
       commands: commands,
       executable_name: options[:executable_name] || release_name,
       help: Help.generate(context, commands),

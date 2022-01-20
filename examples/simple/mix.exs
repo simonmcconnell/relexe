@@ -29,12 +29,12 @@ defmodule Simple.MixProject do
               ],
               [
                 name: "create-admin",
-                help: "Run database migrations",
-                eval: {Simple, :create_admin, [:username, :password]}
+                help: "Create an admin user",
+                eval: {Simple.Release, :create_admin, [:username, :password]}
               ],
               [
                 name: "break-something",
-                help: "Run database migrations",
+                help: "Break something!",
                 rpc: "Simple.break_something()"
               ]
             ],

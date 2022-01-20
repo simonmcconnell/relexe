@@ -1,8 +1,15 @@
 defmodule Expkg.CommandsTest do
   use ExUnit.Case
-  alias Expkg.Commands
-  alias Expkg.Commands.{Command, CompoundCommand, EvalCommand, RpcCommand}
-  doctest Expkg.Commands
+  alias Expkg.Steps.Build.PackAndBuild.Commands
+
+  alias Expkg.Steps.Build.PackAndBuild.Commands.{
+    Command,
+    CompoundCommand,
+    EvalCommand,
+    RpcCommand
+  }
+
+  doctest Expkg.Steps.Build.PackAndBuild.Commands
 
   describe "Commands.parse/3" do
     test "builtin commands" do

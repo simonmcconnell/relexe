@@ -1,12 +1,20 @@
 defmodule Simple do
+  use Application
+
   @moduledoc false
-  def start(_, args) do
-    IO.inspect(args, label: "start args")
-    System.halt(0)
+  def start(_type, args) do
+    IO.puts("Starting simple...")
+    IO.inspect(args, label: "args")
+    children = []
+    Supervisor.start_link(children, strategy: :one_for_one)
   end
 
   def create_admin(username, password) when is_binary(username) and is_binary(password) do
     IO.puts("created admin #{username} with password: #{password}")
     :ok
+  end
+
+  def break_something do
+    IO.puts("broke something!")
   end
 end

@@ -264,7 +264,7 @@ pub fn start(allocator: Allocator, rel: Release) !void {
 }
 
 pub fn iex(allocator: Allocator, rel: Release, iex_args: []const []const u8) !void {
-    var args = try std.ArrayList([]const u8).initCapacity(allocator, 4);
+    var args = std.ArrayList([]const u8).init(allocator);
     defer args.deinit();
     try args.appendSlice(&.{ "--no-halt", "--erl", "-noshell -user Elixir.IEx.CLI", "+iex" });
     if (iex_args.len > 0) try args.appendSlice(iex_args);
@@ -276,8 +276,36 @@ pub fn iex(allocator: Allocator, rel: Release, iex_args: []const []const u8) !vo
     );
 }
 
-pub fn rpc(allocator: Allocator, rel: Release, rpc_command: []const u8) !void {
-    var args = try std.ArrayList([]const u8).initCapacity(allocator, 14);
+pub fn remote(allocator: Allocator, rel: Release) !void {
+    var args = std.ArrayList([]const u8).init(allocator);
+    defer args.deinit();
+
+    try args.appendSlice(&.{ "--werl", "--hidden", "--cookie", rel.cookie });
+    // distribution flag
+    if (!mem.eql(u8, rel.distribution, "none")) {
+        const random = std.crypto.random.intRangeAtMost(u16, 0, 32767);
+        try args.appendSlice(&.{
+            try fmt.allocPrint(allocator, "--{s}", .{rel.distribution}),
+            try fmt.allocPrint(allocator, "rem-{d}-{s}", .{ random, rel.node }),
+        });
+    }
+    try args.appendSlice(&.{
+        "--boot",
+        try fmt.allocPrint(allocator, "{s}\\{s}", .{ rel.vsn_dir, rel.boot_script_clean }),
+        "--boot-var",
+        "RELEASE_LIB",
+        try fmt.allocPrint(allocator, "{s}\\lib", .{rel.root}),
+        "--vm-args",
+        rel.vm_args,
+        "--remsh",
+        rel.node,
+    });
+
+    try iex(allocator, rel, args.items);
+}
+
+pub fn rpc(allocator: Allocator, rel: Release, expr: []const u8) !void {
+    var args = std.ArrayList([]const u8).init(allocator);
     defer args.deinit();
     try args.appendSlice(&.{
         "--hidden",
@@ -303,7 +331,7 @@ pub fn rpc(allocator: Allocator, rel: Release, rpc_command: []const u8) !void {
             rel.vm_args,
             "--rpc-eval",
             rel.node,
-            rpc_command,
+            expr,
         },
     );
     try elixir(allocator, rel, args.items);
@@ -321,13 +349,12 @@ pub fn pid(allocator: Allocator, rel: Release) !void {
     try rpc(allocator, rel, "IO.puts(System.pid())");
 }
 
-pub fn eval(allocator: Allocator, rel: Release, eval_args: []const []const u8) !void {
-    var args = try std.ArrayList([]const u8).initCapacity(allocator, 13);
-    defer args.deinit();
-    try args.append("--eval");
-    try args.appendSlice(eval_args);
-    try args.appendSlice(&.{ "--cookie", rel.cookie });
-    try args.appendSlice(&.{
+pub fn eval(allocator: Allocator, rel: Release, expr: []const u8) !void {
+    try elixir(allocator, rel, &.{
+        "--eval",
+        expr,
+        "--cookie",
+        rel.cookie,
         "--erl-config",
         rel.sys_config,
         "--boot",
@@ -338,6 +365,4 @@ pub fn eval(allocator: Allocator, rel: Release, eval_args: []const []const u8) !
         "--vm-args",
         rel.vm_args,
     });
-
-    try elixir(allocator, rel, args.items);
 }

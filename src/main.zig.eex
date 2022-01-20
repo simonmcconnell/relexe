@@ -29,10 +29,9 @@ pub fn main() anyerror!void {
     const stdout = std.io.getStdOut().writer();
 
     const args = try process.argsAlloc(allocator);
-
-    const command = args[1];
+    const command = if (args.len > 1) args[1] else "<%= @no_args_command %>";
     const command_args = args[2..];
-    
+        
     // load release information from release files, .env and environment
     var r = try release.init(allocator, args[0], command);
 
@@ -46,18 +45,42 @@ pub fn main() anyerror!void {
         return;
     }
 
-
     // CLI
     if (isHelp(command)) {
         if (command_args.len == 0) try stdout.writeAll(usage("help")) else try stdout.writeAll(usage(command_args[0]));
+    } else if (mem.eql(u8, command, "version")) {
+        try stdout.print("{s} {s}", .{ r.name, r.vsn });
+    <%= for command <- @commands do %>
+        <%= case command do %>
+            <% %Commands.Command{} = cmd -> %>
+                <%= case cmd.name do %>
+                    <% "start" -> %>
     } else if (mem.eql(u8, command, "start")) {
         r.extra = "--no-halt";
         try elixir.start(allocator, r);
+
+                    <% "start_iex" -> %>
     } else if (mem.eql(u8, command, "start_iex")) {
         if (builtin.os.tag == .windows) r.extra = "--werl";
         try elixir.iex(allocator, r, command_args[0..]);
+
+                    <% "stop" -> %>
     } else if (mem.eql(u8, command, "stop")) {
         try elixir.stop(allocator, r);
+
+                    <% "restart" -> %>
+    } else if (mem.eql(u8, command, "restart")) {
+        try elixir.restart(allocator, r);
+
+                    <% "pid" -> %>
+    } else if (mem.eql(u8, command, "pid")) {
+        try elixir.pid(allocator, r);
+
+                    <% "remote" -> %>
+    } else if (mem.eql(u8, command, "pid")) {
+        try elixir.remote(allocator, r);
+
+                    <% "service" -> %>
     } else if (builtin.os.tag == .windows and mem.eql(u8, command, "service")) {
         if (command_args.len == 1) {
             if (mem.eql(u8, command_args[0], "add")) {
@@ -84,16 +107,54 @@ pub fn main() anyerror!void {
         } else {
             try stdout.writeAll(usage("service"));
         }
-    <%= if @allow_eval do %>
+
+                    <% "eval" -> %>
+                        <%= if @allow_eval do %>
     } else if (mem.eql(u8, command, "eval")) {
-        if (command_args.len == 1) try elixir.eval(allocator, r, command_args[0..])<%= if :eval not in @hide do %> else try stdout.writeAll(usage_eval)<% end %>;
-    <% end %>
-    <%= if @allow_rpc do %>
+        if (command_args.len == 1) try elixir.eval(allocator, r, command_args[0])<%= if :eval not in @hide do %> else try stdout.writeAll(usage("eval"))<% end %>;
+                        <% end %>
+
+                    <% "rpc" -> %>
+                        <%= if @allow_rpc do %>
     } else if (mem.eql(u8, command, "rpc")) {
-        if (command_args.len == 1) try elixir.rpc(allocator, r, command_args[0])<%= if :rpc not in @hide do %> else try stdout.writeAll(usage_rpc)<% end %>;
+        if (command_args.len == 1) try elixir.rpc(allocator, r, command_args[0])<%= if :rpc not in @hide do %> else try stdout.writeAll(usage("rpc"))<% end %>;
+                        <% end %>
+                <% end %>
+
+            <% %Commands.EvalCommand{name: name, expr: expr} when is_binary(expr) -> %>
+    } else if (mem.eql(u8, command, "<%= name %>")) {
+        try elixir.eval(allocator, r, "<%= expr %>");
+
+            <% %Commands.EvalCommand{name: name, expr: {m, f, a}} -> %>
+    } else if (mem.eql(u8, command, "<%= name %>")) {
+        if (command_args.len == <%= length(a) %>) {
+            const expr = try fmt.allocPrint(
+                allocator, 
+                "<%= "#{m}.#{f}(#{Enum.map(0..length(a) - 1//1, fn _ -> ~S|\"{s}\"| end) |> Enum.join(", ")})" %>", 
+                .{<%= Enum.map(0..length(a) - 1//1, &"command_args[#{&1}]") |> Enum.join(", ") %>},
+            );
+            try elixir.eval(allocator, r, expr);
+        }<%= if name not in @hide do %> else {
+            try stdout.writeAll(usage("<%= name %>"));
+        }<% end %>
+
+            <% %Commands.RpcCommand{name: name, expr: expr} when is_binary(expr) -> %>
+    } else if (mem.eql(u8, command, "<%= name %>")) {
+        try elixir.rpc(allocator, r, "<%= expr %>");
+
+            <% %Commands.RpcCommand{name: name, expr: {m, f, a}} -> %>
+    } else if (mem.eql(u8, command, "<%= name %>")) {
+        if (command_args.len == <%= length(a) %>) {
+            try elixir.rpc(allocator, r, "<%= "#{m}.#{f}(#{a |> Enum.map(&"\\\"#{&1}\\\"") |> Enum.join(", ")})" %>");
+        }<%= if name not in @hide do %> else {
+            try stdout.writeAll(usage("<%= name %>"));
+        }<% end %>
+
+            <% %Commands.CompoundCommand{} -> %>
+        <% end %>
     <% end %>
-    } else if (mem.eql(u8, command, "version")) {
-        try stdout.print("{s} {s}", .{ r.name, r.vsn });
+    } else {
+        try stdout.writeAll(usage("help"));
     }
 }
 
