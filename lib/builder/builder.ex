@@ -1,14 +1,14 @@
-defmodule Expkg.Builder do
+defmodule Relexe.Builder do
   alias Burrito.Builder.Context
   alias Burrito.Builder.Log
   alias Burrito.Builder.Target
 
-  alias Expkg.Steps.Build
+  alias Relexe.Steps.Build
 
   @moduledoc """
   Package builder.
 
-  `expkg` uses a modified [Burrito](https://github.com/burrito-elixir/burrito) build pipline.  We substitute our own `build` phase.  Burrutio builds in "phases". Each phase contains any number of "steps" which are executed one after another.
+  `relexe` uses a modified [Burrito](https://github.com/burrito-elixir/burrito) build pipline.  We substitute our own `build` phase.  Burrutio builds in "phases". Each phase contains any number of "steps" which are executed one after another.
 
   There are 3 phases:
 
@@ -25,8 +25,8 @@ defmodule Expkg.Builder do
   def releases do
     [
       my_app: [
-        steps: [:assemble, &Expkg.pack/1],
-        expkg: [
+        steps: [:assemble, &Relexe.pack/1],
+        relexe: [
           # ... other configuration
           extra_steps: [
             fetch: [pre: [MyCustomStepModule, AnotherCustomStepModule]],
@@ -51,20 +51,20 @@ defmodule Expkg.Builder do
   ]
 
   def build(%Mix.Release{} = release) do
-    options = release.options[:expkg] || []
+    options = release.options[:relexe] || []
     debug? = Keyword.get(options, :debug, false)
 
     build_targets = options[:targets]
 
     # look for override target in system env
     # if it's a valid target, set it as the only target
-    target_override_string = System.get_env("EXPKG_TARGET")
+    target_override_string = System.get_env("RELEXE_TARGET")
 
     build_targets =
       if target_override_string do
         Log.warning(
           :build,
-          "Target is being overridden with EXPKG_TARGET #{target_override_string}"
+          "Target is being overridden with RELEXE_TARGET #{target_override_string}"
         )
 
         old_targets = Target.get_old_targets()
@@ -115,11 +115,11 @@ defmodule Expkg.Builder do
         halted: false
       }
 
-      Log.info(:build, "expkg is building target: #{target.alias}")
+      Log.info(:build, "relexe is building target: #{target.alias}")
 
       Log.info(
         :build,
-        "expkg will build for target:\n\tOS: #{target.os}\n\tCPU: #{target.cpu}\n\tQualifiers: #{inspect(target.qualifiers)}\n\tDebug: #{target.debug?}"
+        "relexe will build for target:\n\tOS: #{target.os}\n\tCPU: #{target.cpu}\n\tQualifiers: #{inspect(target.qualifiers)}\n\tDebug: #{target.debug?}"
       )
 
       Enum.reduce(@phases, initial_context, &run_phase/2)
@@ -133,7 +133,7 @@ defmodule Expkg.Builder do
     Log.info(:phase, "PHASE: #{inspect(phase_name)}")
 
     # Load in extra steps, pre and post
-    extra_steps = context.mix_release.options[:expkg][:extra_steps]
+    extra_steps = context.mix_release.options[:relexe][:extra_steps]
     extra_steps_pre = extra_steps[phase_name][:pre] || []
     extra_steps_post = extra_steps[phase_name][:post] || []
 

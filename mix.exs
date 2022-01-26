@@ -1,16 +1,16 @@
-defmodule Expkg.MixProject do
+defmodule Relexe.MixProject do
   use Mix.Project
 
   @version File.read!("VERSION") |> String.trim()
-  @source_url "https://github.com/simonmcconnell/expkg"
+  @source_url "https://github.com/simonmcconnell/relexe"
 
   def project do
     [
-      app: :expkg,
+      app: :relexe,
       version: @version,
       elixir: "~> 1.13",
       deps: deps(),
-      description: "Generate custom release executables (not scripts)",
+      description: "Generate custom release executables (i.e. not scripts)",
       package: [
         links: %{
           "GitHub" => @source_url,
@@ -20,7 +20,7 @@ defmodule Expkg.MixProject do
         licenses: ["MIT"]
       ],
       docs: [
-        main: "expkg",
+        main: "relexe",
         source_url: @source_url,
         source_ref: "v#{@version}",
         extras: ["CHANGELOG.md"]

@@ -1,10 +1,10 @@
-defmodule Expkg.Steps.Build.PackAndBuild do
+defmodule Relexe.Steps.Build.PackAndBuild do
   alias Burrito.Builder.Context
   alias Burrito.Builder.Log
   alias Burrito.Builder.Step
   alias Burrito.Builder.Target
-  alias Expkg.Steps.Build.PackAndBuild.Commands
-  alias Expkg.Steps.Build.PackAndBuild.Help
+  alias Relexe.Steps.Build.PackAndBuild.Commands
+  alias Relexe.Steps.Build.PackAndBuild.Help
 
   require EEx
 
@@ -15,7 +15,7 @@ defmodule Expkg.Steps.Build.PackAndBuild do
 
   @impl Step
   def execute(%Context{} = context) do
-    options = context.mix_release.options[:expkg] || []
+    options = context.mix_release.options[:relexe] || []
     build_triplet = Target.make_triplet(context.target)
 
     assigns = assigns(context)
@@ -41,16 +41,16 @@ defmodule Expkg.Steps.Build.PackAndBuild do
     # If we don't do this, the archiver will fail to see all the files inside the lib directory
     # This is still under investigation, but touching a file inside the directory seems to force the
     # File system to suddenly "wake up" to all the files inside it.
-    Path.join(context.work_dir, ["/lib", "/.expkg"]) |> File.touch!()
+    Path.join(context.work_dir, ["/lib", "/.relexe"]) |> File.touch!()
 
     build_result =
       System.cmd("zig", ["build"] ++ zig_build_args,
         cd: context.self_dir,
         # env: [
-        #   {"__EXPKG_IS_PROD", is_prod?()},
-        #   {"__EXPKG_RELEASE_PATH", context.work_dir},
-        #   {"__EXPKG_RELEASE_NAME", release_name},
-        #   {"__EXPKG_PLUGIN_PATH", plugin_path}
+        #   {"__RELEXE_IS_PROD", is_prod?()},
+        #   {"__RELEXE_RELEASE_PATH", context.work_dir},
+        #   {"__RELEXE_RELEASE_NAME", release_name},
+        #   {"__RELEXE_PLUGIN_PATH", plugin_path}
         # ],
         into: IO.stream()
       )
@@ -67,7 +67,7 @@ defmodule Expkg.Steps.Build.PackAndBuild do
       _ ->
         Log.error(
           :step,
-          "expkg failed to pack up your app! Check the logs for more information."
+          "relexe failed to pack up your app! Check the logs for more information."
         )
 
         raise "packer build failed"
@@ -75,7 +75,7 @@ defmodule Expkg.Steps.Build.PackAndBuild do
   end
 
   def assigns(%Context{} = context) do
-    options = context.mix_release.options[:expkg] || []
+    options = context.mix_release.options[:relexe] || []
     commands_spec = options[:commands] || Commands.default()
     release_name = Atom.to_string(context.mix_release.name)
     commands = Commands.parse(commands_spec, release_name, context.target.os)

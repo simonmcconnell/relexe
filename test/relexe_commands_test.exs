@@ -1,15 +1,15 @@
-defmodule Expkg.CommandsTest do
+defmodule Relexe.CommandsTest do
   use ExUnit.Case
-  alias Expkg.Steps.Build.PackAndBuild.Commands
+  alias Relexe.Steps.Build.PackAndBuild.Commands
 
-  alias Expkg.Steps.Build.PackAndBuild.Commands.{
+  alias Relexe.Steps.Build.PackAndBuild.Commands.{
     Command,
     CompoundCommand,
     EvalCommand,
     RpcCommand
   }
 
-  doctest Expkg.Steps.Build.PackAndBuild.Commands
+  doctest Relexe.Steps.Build.PackAndBuild.Commands
 
   describe "Commands.parse/3" do
     test "builtin commands" do

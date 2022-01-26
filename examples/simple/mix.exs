@@ -11,8 +11,8 @@ defmodule Simple.MixProject do
       deps: deps(),
       releases: [
         simple: [
-          steps: [:assemble, &Expkg.pack/1],
-          expkg: [
+          steps: [:assemble, &Relexe.pack/1],
+          relexe: [
             executable_name: "simple-cli",
             no_args_command: :start,
             commands: [
@@ -56,7 +56,7 @@ defmodule Simple.MixProject do
 
   defp deps do
     [
-      {:expkg, path: "../../"},
+      {:relexe, path: "../../"},
       {:ecto, "~> 3.7"}
     ]
   end

@@ -1,4 +1,4 @@
-defmodule Expkg.Steps.Build.CopyRelease do
+defmodule Relexe.Steps.Build.CopyRelease do
   alias Burrito.Builder.Context
   alias Burrito.Builder.Step
 
@@ -6,7 +6,7 @@ defmodule Expkg.Steps.Build.CopyRelease do
 
   @success_banner """
   \n\n
-  ----> expkg delivered! 📦📦📦
+  ----> relexe delivered! 📦📦📦
   """
 
   @impl Step
@@ -14,7 +14,7 @@ defmodule Expkg.Steps.Build.CopyRelease do
     app_path = File.cwd!()
 
     release_name = Atom.to_string(context.mix_release.name)
-    executable_name = context.mix_release.options[:expkg][:executable_name] || release_name
+    executable_name = context.mix_release.options[:relexe][:executable_name] || release_name
     target_name = Atom.to_string(context.target.alias)
 
     orig_bin_name =
@@ -32,9 +32,9 @@ defmodule Expkg.Steps.Build.CopyRelease do
       end
 
     bin_path = Path.join(context.self_dir, ["zig-out", "/bin", "/#{orig_bin_name}"])
-    bin_out_path = Path.join(app_path, ["expkg_out"])
+    bin_out_path = Path.join(app_path, ["relexe_out"])
 
-    # TODO: copy the executable to the build directory, or copy the release directory to `expkg_out` and put the proper executable in the proper folder
+    # TODO: copy the executable to the build directory, or copy the release directory to `relexe_out` and put the proper executable in the proper folder
 
     # remove unrequired Mix Release files
     Path.join(context.mix_release.path, ["bin/", release_name]) |> File.rm!()

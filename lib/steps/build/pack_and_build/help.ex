@@ -1,9 +1,9 @@
-defmodule Expkg.Steps.Build.PackAndBuild.Help do
+defmodule Relexe.Steps.Build.PackAndBuild.Help do
   @moduledoc "Generate help (in the form of multi-line `zig` strings) for the package."
   alias Burrito.Builder.Context
   alias Burrito.Builder.Log
 
-  alias Expkg.Steps.Build.PackAndBuild.Commands.{
+  alias Relexe.Steps.Build.PackAndBuild.Commands.{
     Command,
     CompoundCommand
   }
@@ -15,7 +15,7 @@ defmodule Expkg.Steps.Build.PackAndBuild.Help do
   def generate(%Context{} = context, commands) do
     Log.info(:step, "Generating CLI help")
 
-    options = context.mix_release.options[:expkg] || []
+    options = context.mix_release.options[:relexe] || []
     executable_name = options[:executable_name] || Atom.to_string(context.mix_release.name)
     no_args_command = Atom.to_string(options[:no_args_command] || :help)
 

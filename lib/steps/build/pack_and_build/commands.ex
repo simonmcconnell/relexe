@@ -1,4 +1,4 @@
-defmodule Expkg.Steps.Build.PackAndBuild.Commands do
+defmodule Relexe.Steps.Build.PackAndBuild.Commands do
   defmodule Command do
     @enforce_keys [:name, :help]
     defstruct [:name, :help, args: []]
@@ -17,7 +17,7 @@ defmodule Expkg.Steps.Build.PackAndBuild.Commands do
     @type t :: %__MODULE__{
             name: String.t(),
             help: String.t(),
-            commands: [Expkg.Commands.t()]
+            commands: [Relexe.Commands.t()]
           }
   end
 

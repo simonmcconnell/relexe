@@ -1,6 +1,6 @@
-# expkg
+# relexe
 
-[hex](https://hex.pm/packages/expkg) - [docs](https://hexdocs.pm/expkg)
+[hex](https://hex.pm/packages/relexe) - [docs](https://hexdocs.pm/relexe)
 
 ## What's all this about then?
 
@@ -8,14 +8,12 @@
 
 ## What is the difference?
 
-TLDR: 
-
 - if you want a single binary, use `burrito`
-- if you want to add CLI commands to a Mix Release, consider using `expkg`
-- if end users are installing your software, consider using `expkg`
+- if you want to add CLI commands to a Mix Release, consider using `relexe`
+- if end users are installing your software, consider using `relexe`
 - if you're deploying to your own infrastructure, use whatever you like
 
-|                         | Mix.Release                                       | Burrito           | expkg                       |
+|                         | Mix.Release                                       | Burrito           | Relexe                      |
 | ----------------------- | ------------------------------------------------- | ----------------- | --------------------------- |
 | single file?            | ❌                                                 | ✅                 | ❌                           |
 | plugins                 | ❌                                                 | ✅                 | ✅ - Burrito's plugin system |
@@ -23,14 +21,12 @@ TLDR:
 | windows service control | `<release>.bat install` then through `erlsrv.exe` | 🤷                 | release executable CLI      |
 | run laucher w/o args    | `help`                                            | `start`?          | `start` or `help`           |
 
-
 ## About
 <!-- MDOC !-->
 
 Generate an Elixir [release](https://hexdocs.pm/mix/Mix.Tasks.Release.html) with a **binary executable** launcher, instead of batch/shell scripts.
 
-`Expkg` uses [Burrito](https://github.com/burrito-elixir/burrito) with a modified build phase.
-
+`Relexe` uses [Burrito](https://github.com/burrito-elixir/burrito) with a modified build phase.  Relexe's build phase uses Zig to build an executable launcher with your specified CLI.
 
 <!-- MDOC !-->
 
@@ -41,4 +37,3 @@ Generate an Elixir [release](https://hexdocs.pm/mix/Mix.Tasks.Release.html) with
 - [zigler](https://github.com/ityonemo/zigler)
 - [burrito](https://github.com/burrito-elixir/burrito)
 - [bakeware](https://github.com/bake-bake-bake/bakeware)
-

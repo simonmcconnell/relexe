@@ -1,17 +1,17 @@
-defmodule Expkg.HelpTest do
+defmodule Relexe.HelpTest do
   use ExUnit.Case
 
   alias Burrito.Builder.Context
-  alias Expkg.Steps.Build.PackAndBuild.Help
+  alias Relexe.Steps.Build.PackAndBuild.Help
 
-  alias Expkg.Steps.Build.PackAndBuild.Commands.{
+  alias Relexe.Steps.Build.PackAndBuild.Commands.{
     Command,
     CompoundCommand,
     EvalCommand,
     RpcCommand
   }
 
-  doctest Expkg.Steps.Build.PackAndBuild.Help
+  doctest Relexe.Steps.Build.PackAndBuild.Help
 
   describe "Help.generate/2" do
     test "generates help" do
@@ -22,7 +22,7 @@ defmodule Expkg.HelpTest do
         halted: false,
         mix_release: %Mix.Release{
           name: "lies",
-          options: [expkg: [executable_name: "lies-cli"]]
+          options: [relexe: [executable_name: "lies-cli"]]
         }
       }
 
@@ -87,7 +87,7 @@ defmodule Expkg.HelpTest do
         halted: false,
         mix_release: %Mix.Release{
           name: "lies",
-          options: [expkg: [executable_name: "lies-cli", no_args_command: :start]]
+          options: [relexe: [executable_name: "lies-cli", no_args_command: :start]]
         }
       }
 

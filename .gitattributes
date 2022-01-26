@@ -1,5 +1,2 @@
-* text=auto eol=lf
-*.ex text eol=lf
-*.exs text eol=lf
-*.erl text eol=lf
+* text=auto
 *.zig text eol=lf
