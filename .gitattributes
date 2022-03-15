@@ -1,2 +1,4 @@
 * text=auto
+*.ex text eol=lf
 *.zig text eol=lf
+*.zig.eex text eol=lf

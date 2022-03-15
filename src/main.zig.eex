@@ -31,6 +31,8 @@ pub fn main() anyerror!void {
     const args = try process.argsAlloc(allocator);
     const command = if (args.len > 1) args[1] else "<%= @no_args_command %>";
     const command_args = args[2..];
+
+    for (command_args) |a| log.err("command arg: {s}", .{a});
         
     // load release information from release files, .env and environment
     var r = try release.init(allocator, args[0], command);
