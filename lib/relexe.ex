@@ -5,11 +5,22 @@ defmodule Relexe do
              |> Enum.fetch!(1)
 
   alias Burrito.Builder.Log
-  alias Relexe.Builder
+  alias Burrito.Builder
 
-  @spec pack(Mix.Release.t()) :: Mix.Release.t()
-  def pack(%Mix.Release{} = release) do
+  @spec assemble(Mix.Release.t()) :: Mix.Release.t()
+  def assemble(%Mix.Release{options: options} = release) do
     pre_check(release)
+
+    burrito_options = [
+      phases: [
+        build: [Relexe.Steps.Build.PackAndBuild, Relexe.Steps.Build.CopyRelease]
+      ],
+      extra_steps: options[:relexe][:extra_steps] || [],
+      targets: options[:relexe][:targets] || []
+    ]
+
+    release = %Mix.Release{release | options: Keyword.put(options, :burrito, burrito_options)}
+
     Builder.build(release)
   end
 

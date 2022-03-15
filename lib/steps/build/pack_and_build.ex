@@ -20,6 +20,18 @@ defmodule Relexe.Steps.Build.PackAndBuild do
 
     assigns = assigns(context)
 
+    self_path =
+      __ENV__.file
+      |> Path.dirname()
+      |> Path.split()
+      |> List.delete_at(-1)
+      |> List.delete_at(-1)
+      |> List.delete_at(-1)
+      |> Path.join()
+      |> Path.expand()
+
+    context = %Context{context | self_dir: self_path}
+
     # create zig files from templates
     Path.join([context.self_dir, "build.zig"]) |> File.write!(build_zig(assigns))
     Path.join([context.self_dir, "src", "main.zig"]) |> File.write!(main_zig(assigns))
@@ -67,10 +79,10 @@ defmodule Relexe.Steps.Build.PackAndBuild do
       _ ->
         Log.error(
           :step,
-          "relexe failed to pack up your app! Check the logs for more information."
+          "Relexe failed to build your app! Check the logs for more information."
         )
 
-        raise "packer build failed"
+        raise "Relexe build failed"
     end
   end
 
@@ -137,5 +149,19 @@ defmodule Relexe.Steps.Build.PackAndBuild do
     File.rm(metadata)
 
     :ok
+  end
+
+  # *.zig.eex helpers
+
+  defp args_substitutions(args) when is_list(args) do
+    1..length(args)
+    |> Enum.map(fn _ -> ~S|\"{s}\"| end)
+    |> Enum.join(", ")
+  end
+
+  defp args_string(args) when is_list(args) do
+    args
+    |> Enum.map(fn arg -> "\"#{arg}\"" end)
+    |> Enum.join(", ")
   end
 end

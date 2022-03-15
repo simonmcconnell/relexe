@@ -4,12 +4,12 @@ defmodule Simple.Release do
   @app :simple
 
   def create_admin(username, password) do
-    IO.puts("release.create_admin")
     start_app()
     Simple.create_admin(username, password)
   end
 
   def migrate do
+    IO.puts("migrating... (this will crash as nothing is setup in this example)")
     load_app()
     configure_repo()
 

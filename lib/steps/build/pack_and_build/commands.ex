@@ -174,7 +174,7 @@ defmodule Relexe.Steps.Build.PackAndBuild.Commands do
   defp parse_command(:eval, _release_name, _os) do
     %Command{
       name: "eval",
-      help: "Executes the given expression on a new, non-booted system",
+      help: "Executes an expression on a new, non-booted system",
       args: ["expr"]
     }
   end
@@ -182,7 +182,7 @@ defmodule Relexe.Steps.Build.PackAndBuild.Commands do
   defp parse_command(:rpc, _release_name, _os) do
     %Command{
       name: "rpc",
-      help: "Executes the given expression remotely on the running system",
+      help: "Executes an expression remotely on the running system",
       args: ["expr"]
     }
   end
@@ -203,7 +203,9 @@ defmodule Relexe.Steps.Build.PackAndBuild.Commands do
         %Command{name: "add", help: "Add Windows Service"},
         %Command{name: "remove", help: "Remove the service"},
         %Command{name: "start", help: "Start the service"},
-        %Command{name: "stop", help: "Stop the service"}
+        %Command{name: "stop", help: "Stop the service"},
+        %Command{name: "list", help: "List installed services"},
+        %Command{name: "help", help: "Show service controller help"}
       ]
     }
   end
@@ -214,8 +216,9 @@ defmodule Relexe.Steps.Build.PackAndBuild.Commands do
   end
 
   defp validate_rpc_or_eval_command!(fn_string, _rpc_or_eval)
-       when is_binary(fn_string),
-       do: :ok
+       when is_binary(fn_string) do
+    :ok
+  end
 
   defp validate_rpc_or_eval_command!({m, f, a}, rpc_or_eval)
        when is_atom(m) and is_atom(f) and is_list(a) do

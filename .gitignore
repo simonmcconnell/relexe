@@ -34,3 +34,8 @@ relexe-*.tar
 # build artefacts that shouldn't be in this directory
 build.zig
 /src/main.zig
+
+/examples/**/_build/
+/examples/**/.elixir_ls/
+/examples/**/deps/
+/examples/**/relexe_out/

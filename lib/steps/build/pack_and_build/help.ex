@@ -18,12 +18,14 @@ defmodule Relexe.Steps.Build.PackAndBuild.Help do
     options = context.mix_release.options[:relexe] || []
     executable_name = options[:executable_name] || Atom.to_string(context.mix_release.name)
     no_args_command = Atom.to_string(options[:no_args_command] || :help)
+    hidden_commands = options[:hide] || []
 
     {commands_help, help} =
       commands
-      |> drop_hidden_commands(options[:hide] || [])
+      |> Enum.reject(fn command -> command.name in hidden_commands end)
       |> commands_help(executable_name, no_args_command)
 
+    # TODO: put .exe after the executable name for windows builds
     usage = """
     \\\\USAGE:
     \\\\  #{executable_name} #{if options[:no_args_command] == :start, do: "[COMMAND]", else: @command}
@@ -32,7 +34,7 @@ defmodule Relexe.Steps.Build.PackAndBuild.Help do
     #{Enum.join(commands_help, "\n")}
     \\\\
     \\\\HELP:
-    \\\\  help <COMMAND>  Print help for a specific command.
+    \\\\  help <COMMAND>
     ;
     """
 
@@ -46,17 +48,8 @@ defmodule Relexe.Steps.Build.PackAndBuild.Help do
     Enum.map_reduce(commands, %{}, fn command, acc ->
       extra =
         case command do
-          %{name: rpc_or_eval} when rpc_or_eval in ~w(rpc eval) ->
-            "<EXPR>"
-
           %CompoundCommand{commands: _sub_commands} ->
             @command
-
-          %Command{args: args} when args != [] ->
-            args |> Enum.map(&"<#{String.upcase(to_string(&1))}>") |> Enum.join(" ")
-
-          %{expr: {_, _, args}} when args != [] ->
-            args |> Enum.map(&"<#{String.upcase(to_string(&1))}>") |> Enum.join(" ")
 
           _ ->
             ""
@@ -110,34 +103,12 @@ defmodule Relexe.Steps.Build.PackAndBuild.Help do
   @spaces_after_command 2
   defp command_width(commands, min \\ 0) do
     Enum.reduce(commands, min, fn
-      %Command{args: args, name: name}, acc when args != [] ->
-        args_len = String.length(Enum.join(args, " "))
-        max(acc, String.length(name) + args_len + 1)
-
       %CompoundCommand{name: name}, acc ->
         max(acc, String.length(name) + String.length(@command) + 1)
-
-      %{name: name, expr: {_, _, args}}, acc when args != [] ->
-        args_len =
-          Enum.reduce(args, 0, fn arg, acc ->
-            acc + String.length(to_string(arg)) + 3
-          end)
-
-        max(acc, String.length(name) + args_len)
 
       %{name: name}, acc ->
         max(acc, String.length(name))
     end) + @spaces_after_command
   end
 
-  defp drop_hidden_commands(commands, []), do: commands
-
-  defp drop_hidden_commands(commands, hidden_commands) do
-    Enum.reject(commands, fn command -> command.name in hidden_commands end)
-  end
-
-  # defp command_has_args?(%Command{args: args}) when args != [], do: true
-  # defp command_has_args?(%RpcCommand{expr: {_, _, args}}) when args != [], do: true
-  # defp command_has_args?(%EvalCommand{expr: {_, _, args}}) when args != [], do: true
-  # defp command_has_args?(_command), do: false
 end

@@ -36,7 +36,7 @@ defmodule Relexe.MixProject do
 
   defp deps do
     [
-      {:burrito, github: "simonmcconnell/burrito", ref: "f009f35"}
+      {:burrito, github: "simonmcconnell/burrito", branch: "configurable-build-pipeline"}
     ]
   end
 end

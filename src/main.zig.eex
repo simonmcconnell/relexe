@@ -4,7 +4,6 @@ const std = @import("std");
 const debug = std.debug;
 const fmt = std.fmt;
 const fs = std.fs;
-const log = std.log;
 const mem = std.mem;
 const process = std.process;
 
@@ -26,26 +25,19 @@ pub fn main() anyerror!void {
     defer arena.deinit();
     var allocator = arena.allocator();
 
+    const stdin = std.io.getStdIn().reader();
     const stdout = std.io.getStdOut().writer();
+
+    var buf = std.io.bufferedReader(stdin);
+    var rdr = buf.reader();
+    var msg_buf: [1024]u8 = undefined;
 
     const args = try process.argsAlloc(allocator);
     const command = if (args.len > 1) args[1] else "<%= @no_args_command %>";
     const command_args = args[2..];
 
-    for (command_args) |a| log.err("command arg: {s}", .{a});
-        
     // load release information from release files, .env and environment
     var r = try release.init(allocator, args[0], command);
-
-    if (args.len == 1) {
-        <%= if @no_args_command == :start do %>
-        r.extra = "--no-halt";
-        try elixir.start(allocator, r);
-        <% else %>
-        try stdout.writeAll(usage("help"));
-        <% end %>
-        return;
-    }
 
     // CLI
     if (isHelp(command)) {
@@ -57,103 +49,131 @@ pub fn main() anyerror!void {
             <% %Commands.Command{} = cmd -> %>
                 <%= case cmd.name do %>
                     <% "start" -> %>
-    } else if (mem.eql(u8, command, "start")) {
-        r.extra = "--no-halt";
-        try elixir.start(allocator, r);
+                        } else if (mem.eql(u8, command, "start")) {
+                            r.extra = "--no-halt";
+                            try elixir.start(allocator, r);
 
                     <% "start_iex" -> %>
-    } else if (mem.eql(u8, command, "start_iex")) {
-        if (builtin.os.tag == .windows) r.extra = "--werl";
-        try elixir.iex(allocator, r, command_args[0..]);
+                        } else if (mem.eql(u8, command, "start_iex")) {
+                            if (builtin.os.tag == .windows) r.extra = "--werl";
+                            try elixir.iex(allocator, r, command_args[0..]);
 
                     <% "stop" -> %>
-    } else if (mem.eql(u8, command, "stop")) {
-        try elixir.stop(allocator, r);
+                        } else if (mem.eql(u8, command, "stop")) {
+                            try elixir.stop(allocator, r);
 
                     <% "restart" -> %>
-    } else if (mem.eql(u8, command, "restart")) {
-        try elixir.restart(allocator, r);
+                        } else if (mem.eql(u8, command, "restart")) {
+                            try elixir.restart(allocator, r);
 
                     <% "pid" -> %>
-    } else if (mem.eql(u8, command, "pid")) {
-        try elixir.pid(allocator, r);
+                        } else if (mem.eql(u8, command, "pid")) {
+                            try elixir.pid(allocator, r);
 
                     <% "remote" -> %>
-    } else if (mem.eql(u8, command, "pid")) {
-        try elixir.remote(allocator, r);
-
-                    <% "service" -> %>
-    } else if (builtin.os.tag == .windows and mem.eql(u8, command, "service")) {
-        if (command_args.len == 1) {
-            if (mem.eql(u8, command_args[0], "add")) {
-                service.add(allocator, r) catch |err| {
-                    if (err == error.DistributionError) {
-                        try stdout.writeAll("RELEASE_DISTRIBUTION is required to add service (i.e. cannot be 'none')");
-                    } else {
-                        return err;
-                    }
-                };
-            } else if (mem.eql(u8, command_args[0], "remove")) {
-                try service.remove(allocator, r);
-            } else if (mem.eql(u8, command_args[0], "start")) {
-                try service.start(allocator, r);
-            } else if (mem.eql(u8, command_args[0], "stop")) {
-                try service.stop(allocator, r);
-            } else if (mem.eql(u8, command_args[0], "list")) {
-                try service.list(allocator, r);
-            } else if (mem.eql(u8, command_args[0], "help")) {
-                try service.help(allocator, r);
-            } else {
-                try stdout.writeAll(usage("service"));
-            }
-        } else {
-            try stdout.writeAll(usage("service"));
-        }
+                        } else if (mem.eql(u8, command, "pid")) {
+                            try elixir.remote(allocator, r);
 
                     <% "eval" -> %>
                         <%= if @allow_eval do %>
-    } else if (mem.eql(u8, command, "eval")) {
-        if (command_args.len == 1) try elixir.eval(allocator, r, command_args[0])<%= if :eval not in @hide do %> else try stdout.writeAll(usage("eval"))<% end %>;
+                            } else if (mem.eql(u8, command, "eval")) {
+                                try stdout.print("eval command: ", .{});
+                                if (try rdr.readUntilDelimiterOrEof(&msg_buf, '\n')) |user_input| {
+                                    try elixir.eval(allocator, r, trimCrFromEnd(user_input))<%= if :eval not in @hide do %> else try stdout.writeAll(usage("eval"))<% end %>;
+                                } else {
+                                    try stdout.print("Bad input!", .{});
+                                }
                         <% end %>
 
                     <% "rpc" -> %>
                         <%= if @allow_rpc do %>
-    } else if (mem.eql(u8, command, "rpc")) {
-        if (command_args.len == 1) try elixir.rpc(allocator, r, command_args[0])<%= if :rpc not in @hide do %> else try stdout.writeAll(usage("rpc"))<% end %>;
+                            } else if (mem.eql(u8, command, "rpc")) {
+                                try stdout.print("rpc command: ", .{});
+                                if (try rdr.readUntilDelimiterOrEof(&msg_buf, '\n')) |user_input| {
+                                    try elixir.rpc(allocator, r, trimCrFromEnd(user_input))<%= if :rpc not in @hide do %> else try stdout.writeAll(usage("rpc"))<% end %>;
+                                } else {
+                                    try stdout.print("Bad input!", .{});
+                                }
                         <% end %>
                 <% end %>
 
             <% %Commands.EvalCommand{name: name, expr: expr} when is_binary(expr) -> %>
-    } else if (mem.eql(u8, command, "<%= name %>")) {
-        try elixir.eval(allocator, r, "<%= expr %>");
+                } else if (mem.eql(u8, command, "<%= name %>")) {
+                    try elixir.eval(allocator, r, "<%= expr %>");
 
             <% %Commands.EvalCommand{name: name, expr: {m, f, a}} -> %>
-    } else if (mem.eql(u8, command, "<%= name %>")) {
-        if (command_args.len == <%= length(a) %>) {
-            const expr = try fmt.allocPrint(
-                allocator, 
-                "<%= "#{m}.#{f}(#{Enum.map(0..length(a) - 1//1, fn _ -> ~S|\"{s}\"| end) |> Enum.join(", ")})" %>", 
-                .{<%= Enum.map(0..length(a) - 1//1, &"command_args[#{&1}]") |> Enum.join(", ") %>},
-            );
-            try elixir.eval(allocator, r, expr);
-        }<%= if name not in @hide do %> else {
-            try stdout.writeAll(usage("<%= name %>"));
-        }<% end %>
+                } else if (mem.eql(u8, command, "<%= name %>")) {
+                    const evalArgs = [_][]const u8 { <%= args_string(a) %> };
+                    var argValues: [evalArgs.len][]const u8 = undefined;
+                    for (evalArgs) |arg, i| {
+                        try stdout.print("{s}: ", .{ arg });
+                        if (try rdr.readUntilDelimiterOrEofAlloc(allocator, '\n', 1024)) |user_input| {
+                            argValues[i] = trimCrFromEnd(user_input);
+                        } else {
+                            try stdout.print("{s} too long.  Must be less than 1024 characters");
+                        }
+                    }
+                    const expr = try fmt.allocPrint(
+                        allocator,
+                        "<%= "#{m}.#{f}(#{args_substitutions(a)})" %>",
+                        .{ <%= for {_, i} <- Enum.with_index(a), do: "argValues[#{i}], " %> },
+                    );
+                    try elixir.eval(allocator, r, expr);
 
             <% %Commands.RpcCommand{name: name, expr: expr} when is_binary(expr) -> %>
-    } else if (mem.eql(u8, command, "<%= name %>")) {
-        try elixir.rpc(allocator, r, "<%= expr %>");
+                } else if (mem.eql(u8, command, "<%= name %>")) {
+                    try elixir.rpc(allocator, r, "<%= expr %>");
 
             <% %Commands.RpcCommand{name: name, expr: {m, f, a}} -> %>
-    } else if (mem.eql(u8, command, "<%= name %>")) {
-        if (command_args.len == <%= length(a) %>) {
-            try elixir.rpc(allocator, r, "<%= "#{m}.#{f}(#{a |> Enum.map(&"\\\"#{&1}\\\"") |> Enum.join(", ")})" %>");
-        }<%= if name not in @hide do %> else {
-            try stdout.writeAll(usage("<%= name %>"));
-        }<% end %>
+                } else if (mem.eql(u8, command, "<%= name %>")) {
+                    const rpcArgs = [_][]const u8 { <%= args_string(a) %> };
+                    var argValues: [rpcArgs.len][]const u8 = undefined;
+                    for (rpcArgs) |arg, i| {
+                        try stdout.print("{s}: ", .{ arg });
+                        if (try rdr.readUntilDelimiterOrEofAlloc(allocator, '\n', 1024)) |user_input| {
+                            argValues[i] = trimCrFromEnd(user_input);
+                        } else {
+                            try stdout.print("{s} too long.  Must be less than 1024 characters");
+                        }
+                    }
+                    const expr = try fmt.allocPrint(
+                        allocator,
+                        "<%= "#{m}.#{f}(#{args_substitutions(a)})" %>",
+                        .{ <%= for {_, i} <- Enum.with_index(a), do: "argValues[#{i}], " %> },
+                    );
+                    try elixir.rpc(allocator, r, expr);
 
-            <% %Commands.CompoundCommand{} -> %>
-        <% end %>
+            <% %Commands.CompoundCommand{} = cmd -> %>
+                <%= case cmd.name do %>
+                    <% "service" -> %>
+                    } else if (builtin.os.tag == .windows and mem.eql(u8, command, "service")) {
+                        if (command_args.len == 1) {
+                            if (mem.eql(u8, command_args[0], "add")) {
+                                service.add(allocator, r) catch |err| {
+                                    if (err == error.DistributionError) {
+                                        try stdout.writeAll("RELEASE_DISTRIBUTION is required to add service (i.e. cannot be 'none')");
+                                    } else {
+                                        return err;
+                                    }
+                                };
+                            } else if (mem.eql(u8, command_args[0], "remove")) {
+                                try service.remove(allocator, r);
+                            } else if (mem.eql(u8, command_args[0], "start")) {
+                                try service.start(allocator, r);
+                            } else if (mem.eql(u8, command_args[0], "stop")) {
+                                try service.stop(allocator, r);
+                            } else if (mem.eql(u8, command_args[0], "list")) {
+                                try service.list(allocator, r);
+                            } else if (mem.eql(u8, command_args[0], "help")) {
+                                try service.help(allocator, r);
+                            } else {
+                                try stdout.writeAll(usage("service"));
+                            }
+                        } else {
+                            try stdout.writeAll(usage("service"));
+                        }
+                <% end %>
+            <% end %>
     <% end %>
     } else {
         try stdout.writeAll(usage("help"));
@@ -175,4 +195,13 @@ fn usage(command: []const u8) []const u8 {
 // Determines if `command` is help, -h, /?, or --help.
 fn isHelp(command: []const u8) bool {
     return mem.eql(u8, command, "help") or mem.eql(u8, command, "-h") or mem.eql(u8, command, "--help") or mem.eql(u8, command, "/?");
+}
+
+fn trimCrFromEnd(string: []const u8) []const u8 {
+    const length = string.len;
+    if (string[length - 1] == '\r') {
+        return string[0..length - 1];
+    } else {
+        return string;
+    }
 }

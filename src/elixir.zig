@@ -350,8 +350,6 @@ pub fn pid(allocator: Allocator, rel: Release) !void {
 }
 
 pub fn eval(allocator: Allocator, rel: Release, expr: []const u8) !void {
-    log.err("eval expr: {s}", .{expr});
-
     try elixir(allocator, rel, &.{
         "--eval",
         expr,

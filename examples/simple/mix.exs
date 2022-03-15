@@ -11,7 +11,7 @@ defmodule Simple.MixProject do
       deps: deps(),
       releases: [
         simple: [
-          steps: [:assemble, &Relexe.pack/1],
+          steps: [:assemble, &Relexe.assemble/1],
           relexe: [
             executable_name: "simple-cli",
             no_args_command: :start,
@@ -33,9 +33,19 @@ defmodule Simple.MixProject do
                 eval: {Simple.Release, :create_admin, [:username, :password]}
               ],
               [
+                name: "create-admin2",
+                help: "Create an admin user",
+                eval: {Simple.Release, :create_admin, [:username, :password]}
+              ],
+              [
                 name: "break-something",
                 help: "Break something!",
                 rpc: "Simple.break_something()"
+              ],
+              [
+                name: "create-admin-rpc",
+                help: "Create an admin user",
+                rpc: {Simple.Release, :create_admin, [:username, :password]}
               ]
             ],
             hide: [:eval, :rpc, :remote],
