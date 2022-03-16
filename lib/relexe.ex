@@ -19,7 +19,12 @@ defmodule Relexe do
       targets: options[:relexe][:targets] || []
     ]
 
-    release = %Mix.Release{release | options: Keyword.put(options, :burrito, burrito_options)}
+    options =
+      options
+      |> Keyword.put(:burrito, burrito_options)
+      |> Keyword.put(:quiet, true)
+
+    release = %Mix.Release{release | options: options}
 
     Builder.build(release)
   end
