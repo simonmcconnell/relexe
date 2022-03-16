@@ -10,7 +10,7 @@ defmodule Relexe.MixProject do
       version: @version,
       elixir: "~> 1.13",
       deps: deps(),
-      description: "Generate custom release executables (i.e. not scripts)",
+      description: "Generate custom release executables (i.e. not scripts) with a CLI",
       package: [
         links: %{
           "GitHub" => @source_url,
@@ -36,7 +36,7 @@ defmodule Relexe.MixProject do
 
   defp deps do
     [
-      {:burrito, github: "simonmcconnell/burrito", branch: "configurable-build-pipeline"}
+      {:burrito, github: "burrito-elixir/burrito"}
     ]
   end
 end
