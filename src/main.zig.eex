@@ -110,7 +110,7 @@ pub fn main() anyerror!void {
                         if (try rdr.readUntilDelimiterOrEofAlloc(allocator, '\n', 1024)) |user_input| {
                             argValues[i] = trimCrFromEnd(user_input);
                         } else {
-                            try stdout.print("{s} too long.  Must be less than 1024 characters");
+                            try stdout.print("{s} too long.  Must be no more than 1024 characters", .{ arg });
                         }
                     }
                     const expr = try fmt.allocPrint(
@@ -133,7 +133,7 @@ pub fn main() anyerror!void {
                         if (try rdr.readUntilDelimiterOrEofAlloc(allocator, '\n', 1024)) |user_input| {
                             argValues[i] = trimCrFromEnd(user_input);
                         } else {
-                            try stdout.print("{s} too long.  Must be less than 1024 characters");
+                            try stdout.print("{s} too long.  Must no more than 1024 characters", .{ arg });
                         }
                     }
                     const expr = try fmt.allocPrint(
