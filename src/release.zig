@@ -41,23 +41,31 @@ pub fn init(allocator: std.mem.Allocator, prog: []const u8, command: []const u8)
     const release_vsn = split.next() orelse fatal("failed to read release version", .{});
     const release_vsn_dir = try fs.path.join(allocator, &[_][]const u8{ release_root, "releases", release_vsn });
 
-    // TODO: revert this to using the separate batch/shell scripts so env vars can be configured differently for different OSes
-    // load values from .env in release version directory
+    // load values from .env.<command> or .env in release version directory
+    const dotenv_command = try std.fmt.allocPrint(allocator, ".env.{s}", .{command});
+    const dotenv_command_path = try fs.path.join(allocator, &[_][]const u8{ release_vsn_dir, dotenv_command });
     const dotenv_path = try fs.path.join(allocator, &[_][]const u8{ release_vsn_dir, ".env" });
     var dotenv: DotEnv = DotEnv.init(allocator);
     defer dotenv.deinit();
 
-    if (fs.cwd().openFile(dotenv_path, .{})) |file| {
+    if (fs.cwd().openFile(dotenv_command_path, .{})) |file| {
         defer file.close();
         const bytes_read = try file.reader().readAllAlloc(allocator, 1_000_000);
         try dotenv.parse(bytes_read);
         // TODO: print that the .env file is busted and provide some context
     } else |_| {
-        log.debug(".env not found", .{});
+        if (fs.cwd().openFile(dotenv_path, .{})) |file| {
+            defer file.close();
+            const bytes_read = try file.reader().readAllAlloc(allocator, 1_000_000);
+            try dotenv.parse(bytes_read);
+            // TODO: print that the .env file is busted and provide some context
+        } else |_| {
+            log.debug(".env not found", .{});
+        }
     }
 
     // zig fmt: off
-    const default_release_cookie  = try utils.read(allocator, &[_][]const u8{ release_root, "releases", "COOKIE" }, 128);
+    const default_release_cookie  = try   utils.read(allocator, &[_][]const u8{ release_root, "releases", "COOKIE" }, 128);
     const default_release_tmp     = try fs.path.join(allocator, &[_][]const u8{ release_root,    "tmp" });
     const default_release_vm_args = try fs.path.join(allocator, &[_][]const u8{ release_vsn_dir, "vm.args" });
     const default_remote_vm_args  = try fs.path.join(allocator, &[_][]const u8{ release_vsn_dir, "remote.vm.args" });
