@@ -75,26 +75,22 @@ pub fn main() anyerror!void {
                             try elixir.remote(allocator, r);
 
                     <% "eval" -> %>
-                        <%= if @allow_eval do %>
-                            } else if (mem.eql(u8, command, "eval")) {
-                                try stdout.print("eval command: ", .{});
-                                if (try rdr.readUntilDelimiterOrEof(&msg_buf, '\n')) |user_input| {
-                                    try elixir.eval(allocator, r, trimCrFromEnd(user_input))<%= if :eval not in @hide do %> else try stdout.writeAll(usage("eval"))<% end %>;
-                                } else {
-                                    try stdout.print("Bad input!", .{});
-                                }
-                        <% end %>
+                        } else if (mem.eql(u8, command, "eval")) {
+                            try stdout.print("eval command: ", .{});
+                            if (try rdr.readUntilDelimiterOrEof(&msg_buf, '\n')) |user_input| {
+                                try elixir.eval(allocator, r, trimCrFromEnd(user_input))<%= if :eval not in @hide do %> else try stdout.writeAll(usage("eval"))<% end %>;
+                            } else {
+                                try stdout.print("Bad input!", .{});
+                            }
 
                     <% "rpc" -> %>
-                        <%= if @allow_rpc do %>
-                            } else if (mem.eql(u8, command, "rpc")) {
-                                try stdout.print("rpc command: ", .{});
-                                if (try rdr.readUntilDelimiterOrEof(&msg_buf, '\n')) |user_input| {
-                                    try elixir.rpc(allocator, r, trimCrFromEnd(user_input))<%= if :rpc not in @hide do %> else try stdout.writeAll(usage("rpc"))<% end %>;
-                                } else {
-                                    try stdout.print("Bad input!", .{});
-                                }
-                        <% end %>
+                        } else if (mem.eql(u8, command, "rpc")) {
+                            try stdout.print("rpc command: ", .{});
+                            if (try rdr.readUntilDelimiterOrEof(&msg_buf, '\n')) |user_input| {
+                                try elixir.rpc(allocator, r, trimCrFromEnd(user_input))<%= if :rpc not in @hide do %> else try stdout.writeAll(usage("rpc"))<% end %>;
+                            } else {
+                                try stdout.print("Bad input!", .{});
+                            }
                 <% end %>
 
             <% %Commands.EvalCommand{name: name, expr: expr} when is_binary(expr) -> %>
