@@ -2,6 +2,7 @@ defmodule Relexe.HelpTest do
   use ExUnit.Case
 
   alias Burrito.Builder.Context
+  alias Burrito.Builder.Target
   alias Relexe.Steps.Build.PackAndBuild.Help
 
   alias Relexe.Steps.Build.PackAndBuild.Commands.{
@@ -11,12 +12,28 @@ defmodule Relexe.HelpTest do
     RpcCommand
   }
 
+  defp target do
+    %Target{
+      alias: :windows,
+      cpu: :x86_64,
+      cross_build: true,
+      debug?: false,
+      erts_source:
+        {:local_unpacked,
+         [
+           path: "C:\\Users\\simon\\AppData\\Local\\Temp/unpacked_erts_8BF3630877228ABC"
+         ]},
+      os: :windows,
+      qualifiers: [libc: nil]
+    }
+  end
+
   doctest Relexe.Steps.Build.PackAndBuild.Help
 
   describe "Help.generate/2" do
     test "generates help" do
       context = %Context{
-        target: :windows,
+        target: target(),
         work_dir: "",
         self_dir: "",
         halted: false,
@@ -53,35 +70,39 @@ defmodule Relexe.HelpTest do
       help = Help.generate(context, commands)
 
       assert ~S"""
+             \\
              \\USAGE:
-             \\  lies-cli <COMMAND>
+             \\  lies-cli.exe [COMMAND]
              \\
              \\COMMANDS:
              \\  talk-to-me      Start lying to me
              \\  some <COMMAND>  Do stuff
              \\
              \\HELP:
-             \\  help <COMMAND>  Print help for a specific command.
+             \\  help <COMMAND>
+             \\
              ;
              """ == help["help"]
 
       assert ~S"""
+             \\
              \\Do stuff
              \\
              \\USAGE:
-             \\  lies-cli some <COMMAND>
+             \\  lies-cli.exe some <COMMAND>
              \\
              \\COMMANDS:
-             \\  create-admin <USERNAME> <PASSWORD>  Create administrator
-             \\  thing                               Do something
-             \\  who <SOMEONE>                       Who is someone?
+             \\  create-admin  Create administrator
+             \\  thing         Do something
+             \\  who           Who is someone?
+             \\
              ;
              """ == help["some"]
     end
 
     test "generates help when no_args_command = :start" do
       context = %Context{
-        target: :windows,
+        target: target(),
         work_dir: "",
         self_dir: "",
         halted: false,
@@ -105,15 +126,17 @@ defmodule Relexe.HelpTest do
       help = Help.generate(context, commands)
 
       assert ~S"""
+             \\
              \\USAGE:
-             \\  lies-cli [COMMAND]
+             \\  lies-cli.exe [COMMAND]
              \\
              \\COMMANDS:
              \\  start  Start lies (default)
              \\  stop   Stop lies
              \\
              \\HELP:
-             \\  help <COMMAND>  Print help for a specific command.
+             \\  help <COMMAND>
+             \\
              ;
              """ == help["help"]
     end
