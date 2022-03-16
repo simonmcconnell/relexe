@@ -15,7 +15,7 @@ defmodule Relexe.Steps.Build.PackAndBuild.Help do
     Log.info(:step, "Generating CLI help")
 
     options = context.mix_release.options[:relexe] || []
-    executable_name = options[:executable_name] || Atom.to_string(context.mix_release.name)
+    executable_name = Atom.to_string(context.mix_release.name)
 
     executable =
       if context.target.os == :windows do

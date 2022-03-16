@@ -11,6 +11,9 @@ defmodule Simple do
   end
 
   def create_admin(username, password) when is_binary(username) and is_binary(password) do
+    IO.inspect(System.get_env("RELEASE_DISTRIBUTION"), label: "RELEASE_DISTRIBUTION")
+    IO.inspect(System.get_env("RELEASE_NAME"), label: "RELEASE_NAME")
+    IO.inspect(System.get_env("PANTS"), label: "PANTS")
     IO.puts("created admin '#{username}' with password '#{password}'")
     :ok
   end

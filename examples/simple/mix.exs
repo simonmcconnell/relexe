@@ -13,7 +13,6 @@ defmodule Simple.MixProject do
         simple: [
           steps: [:assemble, &Relexe.assemble/1],
           relexe: [
-            executable_name: "simple-cli",
             no_args_command: :start,
             commands: [
               :start,
@@ -48,6 +47,7 @@ defmodule Simple.MixProject do
                 rpc: {Simple.Release, :create_admin, [:username, :password]}
               ]
             ],
+            env: [windows: [RELEASE_DISTRIBUTION: "sname", RELEASE_NAME: "bananas_release"]],
             hide: [:eval, :rpc, :remote],
             targets: [windows: [os: :windows, cpu: :x86_64]]
           ]

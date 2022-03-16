@@ -9,8 +9,8 @@ const Allocator = std.mem.Allocator;
 
 const utils = @import("utils.zig");
 const fatal = utils.fatal;
-const release = @import("release.zig");
-const Release = release.Release;
+const DotEnv = @import("dotenv.zig").DotEnv;
+const Release = @import("release.zig").Release;
 const SliceIterator = utils.SliceIterator;
 const win_ansi = @cImport(@cInclude("win_ansi_fix.h"));
 
@@ -180,8 +180,10 @@ fn elixir(allocator: Allocator, rel: Release, args: []const []const u8) !void {
 
     var env_map = try std.process.getEnvMap(allocator);
     try putReleaseValues(&env_map, rel);
+    try putDotEnvValues(allocator, &env_map, rel);
 
     for (argv.items) |a, i| log.debug("erl.exe arg[{d: >2}] {s}", .{ i, a });
+
     const child_proc = try std.ChildProcess.init(argv.items, allocator);
     child_proc.env_map = &env_map;
     child_proc.stdin_behavior = .Inherit;
@@ -229,6 +231,36 @@ fn putReleaseValues(map: *std.BufMap, rel: Release) !void {
     log.debug("RELEASE_VM_ARGS: {s}", .{rel.vm_args});
     log.debug("RELEASE_VSN: {s}", .{rel.vsn});
     log.debug("RELEASE_VSN_DIR: {s}", .{rel.vsn_dir});
+}
+
+fn putDotEnvValues(allocator: Allocator, map: *std.BufMap, rel: Release) !void {
+    // load values from .env.<command> or .env in release version directory ...
+    const dotenv_command = try std.fmt.allocPrint(allocator, ".env.{s}", .{rel.command});
+    const dotenv_command_path = try fs.path.join(allocator, &[_][]const u8{ rel.vsn_dir, dotenv_command });
+    const dotenv_path = try fs.path.join(allocator, &[_][]const u8{ rel.vsn_dir, ".env" });
+    var dotenv: DotEnv = DotEnv.init(allocator);
+    defer dotenv.deinit();
+
+    if (fs.cwd().openFile(dotenv_command_path, .{})) |file| {
+        defer file.close();
+        const bytes_read = try file.reader().readAllAlloc(allocator, 1_000_000);
+        try dotenv.parse(bytes_read);
+    } else |_| {
+        if (fs.cwd().openFile(dotenv_path, .{})) |file| {
+            defer file.close();
+            const bytes_read = try file.reader().readAllAlloc(allocator, 1_000_000);
+            try dotenv.parse(bytes_read);
+        } else |_| {
+            log.debug(".env not found", .{});
+        }
+    }
+
+    // ...and add them to the provided map
+    var iter = dotenv.map.iterator();
+
+    while (iter.next()) |entry| {
+        try map.put(entry.key_ptr.*, entry.value_ptr.*);
+    }
 }
 
 pub fn start(allocator: Allocator, rel: Release) !void {

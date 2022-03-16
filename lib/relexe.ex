@@ -6,6 +6,7 @@ defmodule Relexe do
 
   alias Burrito.Builder.Log
   alias Burrito.Builder
+  alias Relexe.Steps.Build.{PackAndBuild, CopyRelease, EnvVars}
 
   @spec assemble(Mix.Release.t()) :: Mix.Release.t()
   def assemble(%Mix.Release{options: options} = release) do
@@ -13,7 +14,7 @@ defmodule Relexe do
 
     burrito_options = [
       phases: [
-        build: [Relexe.Steps.Build.PackAndBuild, Relexe.Steps.Build.CopyRelease]
+        build: [PackAndBuild, CopyRelease, EnvVars]
       ],
       extra_steps: options[:relexe][:extra_steps] || [],
       targets: options[:relexe][:targets] || []

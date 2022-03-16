@@ -38,8 +38,8 @@ defmodule Relexe.HelpTest do
         self_dir: "",
         halted: false,
         mix_release: %Mix.Release{
-          name: "lies",
-          options: [relexe: [executable_name: "lies-cli"]]
+          name: :lies,
+          options: [relexe: []]
         }
       }
 
@@ -72,7 +72,7 @@ defmodule Relexe.HelpTest do
       assert ~S"""
              \\
              \\USAGE:
-             \\  lies-cli.exe [COMMAND]
+             \\  lies.exe [COMMAND]
              \\
              \\COMMANDS:
              \\  talk-to-me      Start lying to me
@@ -89,7 +89,7 @@ defmodule Relexe.HelpTest do
              \\Do stuff
              \\
              \\USAGE:
-             \\  lies-cli.exe some <COMMAND>
+             \\  lies.exe some <COMMAND>
              \\
              \\COMMANDS:
              \\  create-admin  Create administrator
@@ -107,8 +107,8 @@ defmodule Relexe.HelpTest do
         self_dir: "",
         halted: false,
         mix_release: %Mix.Release{
-          name: "lies",
-          options: [relexe: [executable_name: "lies-cli", no_args_command: :start]]
+          name: :lies,
+          options: [relexe: [no_args_command: :start]]
         }
       }
 
@@ -128,7 +128,7 @@ defmodule Relexe.HelpTest do
       assert ~S"""
              \\
              \\USAGE:
-             \\  lies-cli.exe [COMMAND]
+             \\  lies.exe [COMMAND]
              \\
              \\COMMANDS:
              \\  start  Start lies (default)

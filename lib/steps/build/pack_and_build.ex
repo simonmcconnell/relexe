@@ -94,7 +94,6 @@ defmodule Relexe.Steps.Build.PackAndBuild do
 
     %{
       commands: commands,
-      executable_name: options[:executable_name] || release_name,
       help: Help.generate(context, commands),
       hide: options[:hide] || [],
       no_args_command: options[:no_args_command] || :help,

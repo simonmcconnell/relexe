@@ -45,6 +45,12 @@ def project do
               rpc: "Bananas.Release.something()"
             ]
           ],
+          env: [
+            windows: [
+              RELEASE_DISTRIBUTION: "none",
+              RELEASE_NODE: "bananas69"
+            ]
+          ]
           hide: [:remote, :eval, :rpc],
           targets: [windows: [os: :windows, cpu: :x86_64]]
         ]
@@ -54,7 +60,9 @@ def project do
 end
 ```
 
-Run `mix release` and you'll have `bananas.exe` in the `bin` folder of your release.  The `help` for this example would be:
+Run `mix release` and you'll have `bananas.exe` in the `bin` folder of your release.  The environment variables specified in `env` are written to `releases/<version>/.env`, which is checked when starting your app.  See [Environment Variables](#environment-variables) for more details.
+
+The `help` for this example would be:
 
 ```
 USAGE:
@@ -75,7 +83,7 @@ HELP:
 Running `bananas create-admin` would prompt the user for the `username` and `password` ...
 
 ```
-bananas create-admin
+> bananas create-admin
 username: Eric
 password: BananaMan
 ```
@@ -84,13 +92,11 @@ password: BananaMan
 
 ## Options
 
-- `executable_name`: name of the executable.  Defaults to the name of the release.
 - `no_args_command`: the command to run if no args are passed.  Defaults to `help`.
-- `commands`: list of commands to include in the release.  See **Commands** below for details.
-- `hide`: list of commands to omit from the help.
+- `commands`: optional list of commands to include in the release.  See [Commands](#commands) for details.
+- `hide`: optional list of commands to omit from the help.
+- `env`: optional list of environment variables for each target.
 - `targets`: list of targets, as defined by Burrito.
-- `allow_eval`: include the `eval` command <!-- TODO: isn't this pointless if we define the commands? -->
-- `allow_rpc`: include the `rpc` command
 
 ## Commands
 
@@ -98,7 +104,7 @@ One of the main goals of this project is to create a release executable with cus
 
 ### Built-in Commands
 
-The default commands are the same commands included with a regular `Mix` release, excpet that `install`, which installs a Windows service is replaced by `service add`.  The default commands are `start start_iex service eval rpc remote restart stop pid version`.
+The default commands are the same commands included with a regular `Mix` release, excpet that `install`, which installs a Windows service is replaced by `service add`.  The default commands are `start start_iex service eval rpc remote restart stop pid version` on Windows and `start start_iex daemon daemon_iex eval rpc remote restart stop pid version` on Unixesque OSes.
 
 #### Windows Service
 
@@ -106,7 +112,7 @@ The Windows Service controls are managed through the release executable.  In a `
 
 ### `eval` and `rpc` Commands
 
-`eval` and `rpc` commands are defined as a three-element keyword list.  The command can be defined as either a straight function call, e.g. `Bananas.Release.migrate()`, or as a `{Module, :function, [arg_names]}` tuple, e.g. `{Bananas.Release, :create_admin, [:username, :password]}`.  An MFA command will prompt the user for each argument value (it is not feasible to handle args on the command line in Windows).
+`eval` and `rpc` commands are defined as a three-element keyword list with a `name`, `help` string and `eval` or `rpc` command.  The command can be either a straight function call, e.g. `Bananas.Release.migrate()`, or a `{Module, :function, [arg_names]}` tuple, e.g. `{Bananas.Release, :create_admin, [:username, :password]}`.  An MFA command will prompt the user for each argument value.  It is not feasible to handle args on the command line in Windows.
 
 ```elixir
 # Function call
@@ -120,17 +126,79 @@ The Windows Service controls are managed through the release executable.  In a `
 [
   name: "create-admin",
   help: "Create an admin user",
-  eval: {Bananas.Release, :create_admin, [:username, :password]}
+  rpc: {Bananas.Release, :create_admin, [:username, :password]}
 ]
 ```
 
 ## Environment Variables
+
+The environment variables that you define are written to `<app>/releases/<version>/.env` and/or `<app>/releases/<version>/.env.<command>`.  They are defined per `target` and can be configured in either by setting the `env` option under `relexe` or by creating a `/rel/relexe/.env.<target>[.command].eex` file.  If both exist, those defined in the options take precendence, i.e. overwrite the `EEx` template output.
+
+### `env` Option
+
+Specify the environment variables for each target in a keyword list in the `env` option.  If you want to load a different set of environment variables for certain commands, specify those with the command as the key under the target.  If you specify a command specific file, **only that file will be parsed**, i.e. the `.env` will be ignored.
+
+For example, the contrived example below will output two files: `bananas/releases/1.0.0/.env` and `bananas/releases/1.0.0/.env.sales`.  If you call `bananas.exe start` it will load the environment variables from `.env`.  If you call `bananas.exe sales` it will load the environment variables from `.env.sales`.
+
+```elixir
+releases: [
+  bananas: [
+    steps: [:assemble, &Relexe.assemble/1],
+    relexe: [
+      commands: [:start, :stop, :sales],
+      env: [
+        windows: [
+          RELEASE_DISTRIBUTION: "none",
+          RELEASE_NODE: "bananas69",
+          sales: [
+            RELEASE_DISTRIBUTION: "name",
+            RELEASE_NODE: "banana_sales"
+          ]
+        ]
+      ],
+      targets: [
+        windows: [os: :windows, cpu: :x86_64]
+      ]
+    ]
+  ]
+]
+```
+
+```
+# .env
+RELEASE_DISTRIBUTION=none
+RELEASE_NODE=bananas69
+```
+
+```
+# .env.sales
+RELEASE_DISTRIBUTION=name
+RELEASE_NODE=banana_sales
+```
+
+### EEx Template
+
+Environment variables can also be specified by way of an `EEx` template.  Template files shall be created in `/rel/relexe` and be named `.env.<target>.eex` or `.env.<target>.<command>.eex`, where `target` is `windows`, `linux` or `darwin` (TODO: or is it `macos`?) and `command` is the name of the command that these environment variables are for.
+
+For example, to recreate the Mix Release `daemon` environment variables, we create a `/rel/relexe/.env.linux.daemon.eex`.
+
+```
+HEART_COMMAND="<%= @context.mix_release.path %>/bin/<%= @context.mix_release.name %> daemon"
+ELIXIR_ERL_OPTIONS="-heart"
+```
+
+**TODO: I'm not sure if this actually works, as I don't deploy to linux/macos.  Please let me know if it doesn't :)**
+
+## `vm.args`
 
 TODO
 
 ## Disabling EMPD
 
 TODO
+
+- with env vars
+- with empdless/empdlessless/etc
 
 <!-- MDOC !-->
 
@@ -141,13 +209,26 @@ TODO
 - if end users are installing your software, consider using `relexe`
 - if you're deploying to your own infrastructure, use whatever you like
 
-|                         | Mix.Release                                       | Burrito           | Relexe                      |
-| ----------------------- | ------------------------------------------------- | ----------------- | --------------------------- |
-| single file?            | ❌                                                 | ✅                 | ❌                           |
-| plugins                 | ❌                                                 | ✅                 | ✅ (Burrito's) |
-| launcher                | batch/shell scripts                               | binary executable | binary executable           |
-| windows service control | `<release>.bat install` then through `erlsrv.exe` | DIY, e.g. NSSM    | `<release>.exe service` CLI                         |
-| run laucher w/o args    | `help`                                            | `start`           | `start` or `help`           |
+|                         | Mix.Release                                       | Burrito                       | Relexe                      |
+| ----------------------- | ------------------------------------------------- | ----------------------------- | --------------------------- |
+| single file?            | ❌                                                 | ✅                             | ❌                           |
+| plugins                 | ❌                                                 | ✅                             | ✅ (Burrito's)               |
+| launcher                | batch/shell scripts                               | binary executable             | binary executable           |
+| windows service control | `<release>.bat install` then through `erlsrv.exe` | non-goal, i.e. DIY, e.g. NSSM | `<release>.exe service` CLI |
+| run laucher w/o args    | `help`                                            | `start`                       | `start` or `help`           |
+
+## TODO
+
+- [ ] CI
+- [ ] tests for `EnvVars`
+- [ ] rename erl.exe and change icon
+- [ ] test on macos & linux
+
+## Notes
+
+- This is at the 'barely works for my use case' stage of development.
+- I've only tested this on Windows.
+- I have no idea what I'm doing when it comes to writing Zig code.
 
 ## Credits
 
