@@ -7,7 +7,7 @@
 
 Generate an Elixir [release](https://hexdocs.pm/mix/Mix.Tasks.Release.html) with a **binary executable** launcher, instead of batch/shell scripts.
 
-`Relexe` uses [Burrito](https://github.com/burrito-elixir/burrito) with a modified build phase.  Relexe's build phase uses Zig to build an executable launcher with a user-specified CLI.
+`Relexe` uses [Burrito](https://github.com/burrito-elixir/burrito) with a modified build phase thate uses Zig to build an executable launcher with a user-specified CLI.
 
 ## Usage
 
@@ -66,7 +66,7 @@ The `help` for this example would be:
 
 ```
 USAGE:
-  bananas [COMMAND]
+  bananas.exe [COMMAND]
 
 COMMANDS:
   start              Start bananas (default)
@@ -83,7 +83,7 @@ HELP:
 Running `bananas create-admin` would prompt the user for the `username` and `password` ...
 
 ```
-> bananas create-admin
+> bananas.exe create-admin
 username: Eric
 password: BananaMan
 ```
@@ -112,7 +112,7 @@ The Windows Service controls are managed through the release executable.  In a `
 
 ### `eval` and `rpc` Commands
 
-`eval` and `rpc` commands are defined as a three-element keyword list with a `name`, `help` string and `eval` or `rpc` command.  The command can be either a straight function call, e.g. `Bananas.Release.migrate()`, or a `{Module, :function, [arg_names]}` tuple, e.g. `{Bananas.Release, :create_admin, [:username, :password]}`.  An MFA command will prompt the user for each argument value.  It is not feasible to handle args on the command line in Windows.
+`eval` and `rpc` commands are defined as a three-element keyword list with a `name`, `help` string and `eval` or `rpc` command.  The command can be either a straight function call, e.g. `Bananas.Release.migrate()`, or a `{Module, :function, [arg_names]}` tuple, e.g. `{Bananas.Release, :create_admin, [:username, :password]}`.  An MFA command will prompt the user for each argument value, as it is not feasible to handle args on the command line in Windows.
 
 ```elixir
 # Function call
@@ -132,7 +132,7 @@ The Windows Service controls are managed through the release executable.  In a `
 
 ## Environment Variables
 
-The environment variables that you define are written to `<app>/releases/<version>/.env` and/or `<app>/releases/<version>/.env.<command>`.  They are defined per `target` and can be configured in either by setting the `env` option under `relexe` or by creating a `/rel/relexe/.env.<target>[.command].eex` file.  If both exist, those defined in the options take precendence, i.e. overwrite the `EEx` template output.
+The environment variables that you define are written to `<app>/releases/<version>/.env` and/or `<app>/releases/<version>/.env.<command>`.  They are defined per `target` and can be configured either by setting the `relexe[:env]` option in your release config or by creating a `/rel/relexe/.env.<target>[.command].eex` file.  If both exist, the options take precendence.
 
 ### `env` Option
 
@@ -178,7 +178,7 @@ RELEASE_NODE=banana_sales
 
 ### EEx Template
 
-Environment variables can also be specified by way of an `EEx` template.  Template files shall be created in `/rel/relexe` and be named `.env.<target>.eex` or `.env.<target>.<command>.eex`, where `target` is `windows`, `linux` or `darwin` (TODO: or is it `macos`?) and `command` is the name of the command that these environment variables are for.
+Environment variables can also be specified by way of an `EEx` template.  Template files shall be created in `/rel/relexe` and be named `.env.<target>.eex` or `.env.<target>.<command>.eex`, where `<target>` is `windows`, `linux` or `darwin` (TODO: or is it `macos`?) and `<command>` is the name of the command that these environment variables are for.
 
 For example, to recreate the Mix Release `daemon` environment variables, we create a `/rel/relexe/.env.linux.daemon.eex`.
 
@@ -188,10 +188,6 @@ ELIXIR_ERL_OPTIONS="-heart"
 ```
 
 **TODO: I'm not sure if this actually works, as I don't deploy to linux/macos.  Please let me know if it doesn't :)**
-
-## `vm.args`
-
-TODO
 
 ## Disabling EMPD
 

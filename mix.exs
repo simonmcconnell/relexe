@@ -14,7 +14,6 @@ defmodule Relexe.MixProject do
       package: [
         links: %{
           "GitHub" => @source_url,
-          "Zig" => "https://ziglang.org",
           "Burrito" => "https://github.com/burrito-elixir/burrito"
         },
         licenses: ["MIT"]
@@ -36,7 +35,8 @@ defmodule Relexe.MixProject do
 
   defp deps do
     [
-      {:burrito, github: "burrito-elixir/burrito"}
+      {:burrito, github: "burrito-elixir/burrito"},
+      {:ex_doc, "~> 0.28", only: :dev, runtime: false}
     ]
   end
 end
