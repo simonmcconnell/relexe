@@ -5,7 +5,7 @@
 ## About
 <!-- MDOC !-->
 
-Generate an Elixir [release](https://hexdocs.pm/mix/Mix.Tasks.Release.html) with a **binary executable** launcher, instead of batch/shell scripts.
+Generate a [Mix Release](https://hexdocs.pm/mix/Mix.Tasks.Release.html) with a **binary executable** launcher, instead of batch/shell scripts.
 
 `Relexe` uses [Burrito](https://github.com/burrito-elixir/burrito) with a modified build phase thate uses Zig to build an executable launcher with a user-specified CLI.
 
@@ -60,7 +60,7 @@ def project do
 end
 ```
 
-Run `mix release` and you'll have `bananas.exe` in the `bin` folder of your release.  The environment variables specified in `env` are written to `releases/<version>/.env`, which is checked when starting your app.  See [Environment Variables](#environment-variables) for more details.
+Run `mix release` and you'll have `bananas.exe` in the `bin` folder of your release.  The environment variables specified in `env` are written to `releases/<version>/.env`, which is checked when starting your app.  See [Environment Variables] for more details.
 
 The `help` for this example would be:
 
@@ -92,19 +92,19 @@ password: BananaMan
 
 ## Options
 
-- `no_args_command`: the command to run if no args are passed.  Defaults to `help`.
-- `commands`: optional list of commands to include in the release.  See [Commands](#commands) for details.
+- `no_args_command`: the command to run if no args are passed.  Can be either `:start` or `:help`.  Defaults to `help`.
+- `commands`: optional list of commands to include in the release.
 - `hide`: optional list of commands to omit from the help.
 - `env`: optional list of environment variables for each target.
-- `targets`: list of targets, as defined by Burrito.
+- `targets`: list of targets, as defined by [Burrito](https://github.com/burrito-elixir/burrito).
 
 ## Commands
 
-One of the main goals of this project is to create a release executable with custom commands.  For example, you might want to create a `migrate` command to run database migrations.
+One of the main goals of this project is to create a release executable with custom CLI commands.  For example, you might want to create a `migrate` command to run database migrations or a `gen-secret` so the user can generate a secret for their self-hosted Phoenix app.
 
 ### Built-in Commands
 
-The default commands are the same commands included with a regular `Mix` release, excpet that `install`, which installs a Windows service is replaced by `service add`.  The default commands are `start start_iex service eval rpc remote restart stop pid version` on Windows and `start start_iex daemon daemon_iex eval rpc remote restart stop pid version` on Unixesque OSes.
+The default commands are the same commands included with a regular `Mix` release, except that `install`, which installs a Windows service is replaced by `service add`.  The default commands are `start start_iex service eval rpc remote restart stop pid version` on Windows and `start start_iex daemon daemon_iex eval rpc remote restart stop pid version` on Unixesque OSes.
 
 #### Windows Service
 
@@ -189,6 +189,10 @@ ELIXIR_ERL_OPTIONS="-heart"
 
 **TODO: I'm not sure if this actually works, as I don't deploy to linux/macos.  Please let me know if it doesn't :)**
 
+## Plugins
+
+TODO
+
 ## Disabling EMPD
 
 TODO
@@ -219,6 +223,7 @@ TODO
 - [ ] tests for `EnvVars`
 - [ ] rename erl.exe and change icon
 - [ ] test on macos & linux
+- [ ] plugins
 
 ## Notes
 

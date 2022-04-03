@@ -1,4 +1,7 @@
 defmodule Relexe.Steps.Build.PackAndBuild do
+  @moduledoc """
+  Build phase that generates `.zig` files from `EEx` templates using the release's config.
+  """
   alias Burrito.Builder.Context
   alias Burrito.Builder.Log
   alias Burrito.Builder.Step
@@ -10,7 +13,9 @@ defmodule Relexe.Steps.Build.PackAndBuild do
 
   @behaviour Step
 
+  @doc "`build.zig` EEx template"
   EEx.function_from_file(:def, :build_zig, "build.zig.eex", [:assigns])
+  @doc "`src/main.zig` EEx template"
   EEx.function_from_file(:def, :main_zig, "src/main.zig.eex", [:assigns])
 
   @impl Step
@@ -86,7 +91,7 @@ defmodule Relexe.Steps.Build.PackAndBuild do
     end
   end
 
-  def assigns(%Context{} = context) do
+  defp assigns(%Context{} = context) do
     options = context.mix_release.options[:relexe] || []
     commands_spec = options[:commands] || Commands.default()
     release_name = Atom.to_string(context.mix_release.name)
