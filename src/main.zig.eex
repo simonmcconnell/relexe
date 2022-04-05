@@ -30,8 +30,12 @@ pub fn main() anyerror!void {
 
     var buf = std.io.bufferedReader(stdin);
     var rdr = buf.reader();
+    <%= if Enum.any?(@commands, fn
+        %Commands.Command{name: name} -> name in ["eval", "rpc"]
+        _ -> false
+        end) do %>
     var msg_buf: [1024]u8 = undefined;
-
+    <% end %>
     const args = try process.argsAlloc(allocator);
     const command = if (args.len > 1) args[1] else "<%= @no_args_command %>";
     const command_args = args[2..];
