@@ -60,7 +60,7 @@ def project do
 end
 ```
 
-Run `mix release` and you'll have `bananas.exe` in the `bin` folder of your release.  The environment variables specified in `env` are written to `releases/<version>/.env`, which is checked when starting your app.  See [Environment Variables] for more details.
+Run `mix release` and you'll have `bananas.exe` in the `bin` folder of your release.  The environment variables specified in `env` are written to `releases/<version>/.env`, which is checked when starting your app.  See Environment Variables for more details.
 
 The `help` for this example would be:
 
