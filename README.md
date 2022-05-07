@@ -7,7 +7,7 @@
 
 Generate a [Mix Release](https://hexdocs.pm/mix/Mix.Tasks.Release.html) with a **binary executable** launcher, instead of batch/shell scripts.
 
-`Relexe` uses [Burrito](https://github.com/burrito-elixir/burrito) with a modified build phase thate uses Zig to build an executable launcher with a user-specified CLI.
+`Relexe` uses [Burrito](https://github.com/burrito-elixir/burrito) with a modified build phase, which uses Zig to build an executable launcher with a CLI.
 
 ## Usage
 
