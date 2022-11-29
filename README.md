@@ -1,7 +1,5 @@
 # relexe
 
-[hex](https://hex.pm/packages/relexe) - [docs](https://hexdocs.pm/relexe)
-
 ## About
 <!-- MDOC !-->
 
@@ -79,7 +77,7 @@ HELP:
   help <COMMAND>
 ```
 
-Running `bananas create-admin` would prompt the user for the `username` and `password` ...
+Running `bananas create-admin` would prompt the user for the `username` and `password`:
 
 ```
 > bananas.exe create-admin
@@ -87,7 +85,7 @@ username: Eric
 password: BananaMan
 ```
 
-... before calling the `{Bananas.Release, :create_admin, ["Eric", "BananaMan"]}` `MFA` via `eval`.
+The responses will be passed to the `{Bananas.Release, :create_admin, ["Eric", "BananaMan"]}` `MFA` via `eval`.
 
 ## Options
 
