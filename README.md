@@ -21,14 +21,14 @@ def project do
       bananas: [
         steps: [:assemble, &Relexe.assemble/1],
         relexe: [
-          no_args_command: :start,
+          default_command: :start,
           commands: [
             :start,
             :stop,
             :service,
-            :remote,
-            :eval,
-            :rpc,
+            [name: :remote, hidden: true],
+            [name: :eval, hidden: true],
+            [name: :rpc, hidden: true],
             [
               name: "migrate",
               help: "Run database migrations",
@@ -51,7 +51,6 @@ def project do
               RELEASE_NODE: "bananas69"
             ]
           ]
-          hide: [:remote, :eval, :rpc],
           targets: [windows: [os: :windows, cpu: :x86_64]]
         ]
       ]
@@ -92,9 +91,8 @@ password: BananaMan
 
 ## Options
 
-- `no_args_command`: the command to run if no args are passed.  Can be either `:start` or `:help`.  Defaults to `help`.
+- `default_command`: the command to run if no args are passed.  Can be either `:start` or `:help`.  Defaults to `help`.
 - `commands`: optional list of commands to include in the release.
-- `hide`: optional list of commands to omit from the help.
 - `env`: optional list of environment variables for each target.
 - `targets`: list of targets, as defined by [Burrito](https://github.com/burrito-elixir/burrito).
 
@@ -108,7 +106,7 @@ The default commands are the same commands included with a regular `Mix` release
 
 #### Windows Service
 
-The Windows Service controls are managed through the release executable.  In a `Mix` release, you use `bananas.bat install` to create the service and then manage the service using `erlsrv.exe`.  With `Relexe`, you manage the service with `bananas.exe service add`, `bananas.exe service start` etc.
+The Windows Service controls are managed through the release executable.  In a `Mix` release, you use `bananas.bat install` to create the service and then manage the service using `erlsrv.exe`.  With `Relexe`, you manage the service with `bananas.exe service [add|remove|start|stop|list|help]`.
 
 ### `eval` and `rpc` Commands
 
@@ -178,7 +176,7 @@ RELEASE_NODE=banana_sales
 
 ### EEx Template
 
-Environment variables can also be specified by way of an `EEx` template.  Template files shall be created in `/rel/relexe` and be named `.env.<target>.eex` or `.env.<target>.<command>.eex`, where `<target>` is `windows`, `linux` or `darwin` (TODO: or is it `macos`?) and `<command>` is the name of the command that these environment variables are for.
+Environment variables can also be specified by way of an `EEx` template.  Template files shall be created in `/rel/relexe` and be named `.env.<target>.eex` or `.env.<target>.<command>.eex`, where `<target>` is `windows`, `linux` or `macos` and `<command>` is the name of the command that these environment variables are for.
 
 For example, to recreate the Mix Release `daemon` environment variables, we create a `/rel/relexe/.env.linux.daemon.eex`.
 
@@ -187,7 +185,7 @@ HEART_COMMAND="<%= @context.mix_release.path %>/bin/<%= @context.mix_release.nam
 ELIXIR_ERL_OPTIONS="-heart"
 ```
 
-**TODO: I'm not sure if this actually works, as I don't deploy to linux/macos.  Please let me know if it doesn't :)**
+**NOTE: I'm not sure if this actually works, as I don't deploy to linux/macos.  Please let me know if it doesn't :)**
 
 ## Plugins
 

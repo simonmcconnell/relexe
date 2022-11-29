@@ -40,9 +40,9 @@ defmodule Relexe do
       exit(1)
     end
 
-    # no_args_command
-    if release.options[:relexe][:no_args_command] not in [nil, :start, :help] do
-      Log.error(:build, "no_args_command must be either :start or :help")
+    # default_command
+    if release.options[:relexe][:default_command] not in [nil, :start, :help] do
+      Log.error(:build, "If set, default_command must be either :start or :help")
       exit(1)
     end
   end

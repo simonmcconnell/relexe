@@ -65,7 +65,7 @@ pub fn init(allocator: std.mem.Allocator, prog: []const u8, command: []const u8)
     }
 
     // zig fmt: off
-    const default_release_cookie  = try   utils.read(allocator, &[_][]const u8{ release_root, "releases", "COOKIE" }, 128);
+    const default_release_cookie  = try utils.read(allocator, &[_][]const u8{ release_root, "releases", "COOKIE" }, 128);
     const default_release_tmp     = try fs.path.join(allocator, &[_][]const u8{ release_root,    "tmp" });
     const default_release_vm_args = try fs.path.join(allocator, &[_][]const u8{ release_vsn_dir, "vm.args" });
     const default_remote_vm_args  = try fs.path.join(allocator, &[_][]const u8{ release_vsn_dir, "remote.vm.args" });

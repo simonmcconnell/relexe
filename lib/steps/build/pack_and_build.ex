@@ -15,6 +15,7 @@ defmodule Relexe.Steps.Build.PackAndBuild do
 
   @doc "`build.zig` EEx template"
   EEx.function_from_file(:def, :build_zig, "build.zig.eex", [:assigns])
+
   @doc "`src/main.zig` EEx template"
   EEx.function_from_file(:def, :main_zig, "src/main.zig.eex", [:assigns])
 
@@ -96,12 +97,12 @@ defmodule Relexe.Steps.Build.PackAndBuild do
     commands_spec = options[:commands] || Commands.default()
     release_name = Atom.to_string(context.mix_release.name)
     commands = Commands.parse(commands_spec, release_name, context.target.os)
+    help = Help.generate(context, commands)
 
     %{
       commands: commands,
-      help: Help.generate(context, commands),
-      hide: options[:hide] || [],
-      no_args_command: options[:no_args_command] || :help,
+      help: help,
+      default_command: options[:default_command] || :help,
       release_name: release_name
     }
   end

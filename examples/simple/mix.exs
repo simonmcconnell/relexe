@@ -13,14 +13,14 @@ defmodule Simple.MixProject do
         simple: [
           steps: [:assemble, &Relexe.assemble/1],
           relexe: [
-            no_args_command: :start,
+            default_command: :start,
             commands: [
               :start,
               :stop,
               :service,
-              :remote,
-              :eval,
-              :rpc,
+              [name: :remote, hidden: true],
+              [name: :eval, hidden: true],
+              [name: :rpc, hidden: true],
               [
                 name: "migrate",
                 help: "Run database migrations",
@@ -48,7 +48,6 @@ defmodule Simple.MixProject do
               ]
             ],
             env: [windows: [RELEASE_DISTRIBUTION: "sname", RELEASE_NAME: "bananas_release"]],
-            hide: [:eval, :rpc, :remote],
             targets: [windows: [os: :windows, cpu: :x86_64]]
           ]
         ]

@@ -25,19 +25,19 @@ pub fn main() anyerror!void {
     defer arena.deinit();
     var allocator = arena.allocator();
 
-    const stdin = std.io.getStdIn().reader();
     const stdout = std.io.getStdOut().writer();
-
+    <%= if Enum.any?(@commands, fn
+            %Commands.Command{name: name} -> name in ["eval", "rpc"]
+            %_{expr: {_, _, _}}           -> true
+            _                             -> false
+            end) do %>
+    const stdin = std.io.getStdIn().reader();
     var buf = std.io.bufferedReader(stdin);
     var rdr = buf.reader();
-    <%= if Enum.any?(@commands, fn
-        %Commands.Command{name: name} -> name in ["eval", "rpc"]
-        _ -> false
-        end) do %>
-    var msg_buf: [1024]u8 = undefined;
     <% end %>
+
     const args = try process.argsAlloc(allocator);
-    const command = if (args.len > 1) args[1] else "<%= @no_args_command %>";
+    const command = if (args.len > 1) args[1] else "<%= @default_command %>";
     const command_args = args[2..];
 
     // load release information from release files, .env and environment
@@ -50,7 +50,7 @@ pub fn main() anyerror!void {
         try stdout.print("{s} {s}", .{ r.name, r.vsn });
     <%= for command <- @commands do %>
         <%= case command do %>
-            <% %Commands.Command{} = cmd -> %>
+            <% %Commands.Command{hidden: hidden} = cmd -> %>
                 <%= case cmd.name do %>
                     <% "start" -> %>
                         } else if (mem.eql(u8, command, "start")) {
@@ -81,8 +81,8 @@ pub fn main() anyerror!void {
                     <% "eval" -> %>
                         } else if (mem.eql(u8, command, "eval")) {
                             try stdout.print("eval command: ", .{});
-                            if (try rdr.readUntilDelimiterOrEof(&msg_buf, '\n')) |user_input| {
-                                try elixir.eval(allocator, r, trimCrFromEnd(user_input))<%= if :eval not in @hide do %> else try stdout.writeAll(usage("eval"))<% end %>;
+                            if (try rdr.readUntilDelimiterOrEofAlloc(allocator, '\n', 4096)) |user_input| {
+                                try elixir.eval(allocator, r, trimCrFromEnd(user_input))<%= if not hidden do %> else try stdout.writeAll(usage("eval"))<% end %>;
                             } else {
                                 try stdout.print("Bad input!", .{});
                             }
@@ -90,8 +90,8 @@ pub fn main() anyerror!void {
                     <% "rpc" -> %>
                         } else if (mem.eql(u8, command, "rpc")) {
                             try stdout.print("rpc command: ", .{});
-                            if (try rdr.readUntilDelimiterOrEof(&msg_buf, '\n')) |user_input| {
-                                try elixir.rpc(allocator, r, trimCrFromEnd(user_input))<%= if :rpc not in @hide do %> else try stdout.writeAll(usage("rpc"))<% end %>;
+                            if (try rdr.readUntilDelimiterOrEofAlloc(allocator, '\n', 4096)) |user_input| {
+                                try elixir.rpc(allocator, r, trimCrFromEnd(user_input))<%= if not hidden do %> else try stdout.writeAll(usage("rpc"))<% end %>;
                             } else {
                                 try stdout.print("Bad input!", .{});
                             }

@@ -70,7 +70,6 @@ defmodule Relexe.HelpTest do
       help = Help.generate(context, commands)
 
       assert ~S"""
-             \\
              \\USAGE:
              \\  lies.exe [COMMAND]
              \\
@@ -85,7 +84,6 @@ defmodule Relexe.HelpTest do
              """ == help["help"]
 
       assert ~S"""
-             \\
              \\Do stuff
              \\
              \\USAGE:
@@ -100,7 +98,7 @@ defmodule Relexe.HelpTest do
              """ == help["some"]
     end
 
-    test "generates help when no_args_command = :start" do
+    test "generates help when default_command = :start" do
       context = %Context{
         target: target(),
         work_dir: "",
@@ -108,7 +106,7 @@ defmodule Relexe.HelpTest do
         halted: false,
         mix_release: %Mix.Release{
           name: :lies,
-          options: [relexe: [no_args_command: :start]]
+          options: [relexe: [default_command: :start]]
         }
       }
 
@@ -126,7 +124,6 @@ defmodule Relexe.HelpTest do
       help = Help.generate(context, commands)
 
       assert ~S"""
-             \\
              \\USAGE:
              \\  lies.exe [COMMAND]
              \\

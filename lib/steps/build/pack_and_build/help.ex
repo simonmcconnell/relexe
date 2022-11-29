@@ -1,5 +1,7 @@
 defmodule Relexe.Steps.Build.PackAndBuild.Help do
   @moduledoc "Generate help (in the form of multi-line `zig` strings) for the package."
+  import Relexe.Utils
+
   alias Burrito.Builder.Context
   alias Burrito.Builder.Log
 
@@ -24,17 +26,17 @@ defmodule Relexe.Steps.Build.PackAndBuild.Help do
         executable_name
       end
 
-    no_args_command = Atom.to_string(options[:no_args_command] || :help)
-    hidden_commands = options[:hide] || []
+    default_command =
+      Keyword.get(options, :default_command, :help)
+      |> ensure_string()
 
     {commands_help, help} =
       commands
-      |> Enum.reject(fn command -> command.name in hidden_commands end)
-      |> commands_help(executable, no_args_command)
+      |> Enum.reject(fn command -> command.hidden end)
+      |> commands_help(executable, default_command)
 
     # TODO: put .exe after the executable name for windows builds
     usage = """
-    \\\\
     \\\\USAGE:
     \\\\  #{executable} [COMMAND]
     \\\\
@@ -50,8 +52,9 @@ defmodule Relexe.Steps.Build.PackAndBuild.Help do
     Map.put(help, "help", usage)
   end
 
-  def commands_help(commands, executable, no_args_command)
-      when is_list(commands) and is_binary(executable) and is_binary(no_args_command) do
+  @doc "Generate help for the release executable."
+  def commands_help(commands, executable, default_command)
+      when is_list(commands) and is_binary(executable) and is_binary(default_command) do
     command_width = command_width(commands)
 
     Enum.map_reduce(commands, %{}, fn command, acc ->
@@ -70,12 +73,12 @@ defmodule Relexe.Steps.Build.PackAndBuild.Help do
         ~S"\\  " <>
           padded_command <>
           command.help <>
-          if command.name == no_args_command, do: " (default)", else: ""
+          if command.name == default_command, do: " (default)", else: ""
 
       {sub_commands_lines, _sub_command_help} =
         case command do
           %CompoundCommand{commands: cmds} ->
-            commands_help(cmds, executable, no_args_command)
+            commands_help(cmds, executable, default_command)
 
           _ ->
             {[], nil}
@@ -85,7 +88,6 @@ defmodule Relexe.Steps.Build.PackAndBuild.Help do
         case command do
           %CompoundCommand{} ->
             """
-            \\\\
             \\\\#{command.help}
             \\\\
             \\\\USAGE:
@@ -99,7 +101,6 @@ defmodule Relexe.Steps.Build.PackAndBuild.Help do
 
           _ ->
             """
-            \\\\
             \\\\#{command.help}
             \\\\
             \\\\USAGE:
