@@ -1,5 +1,4 @@
 const std = @import("std");
-const fmt = std.fmt;
 const s = std.fmt.allocPrint;
 const fs = std.fs;
 const log = std.log;
