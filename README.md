@@ -5,9 +5,18 @@
 
 Generate a [Mix Release](https://hexdocs.pm/mix/Mix.Tasks.Release.html) with a **binary executable** launcher, instead of batch/shell scripts.
 
-`Relexe` uses [Burrito](https://github.com/burrito-elixir/burrito) with a modified build phase, which uses Zig to build an executable launcher with a CLI.
+`Relexe` uses [Burrito](https://github.com/burrito-elixir/burrito) with a modified build phase.  The build phase uses Zig to build an executable launcher with your defined CLI.  The CLI can include some or all of the usual commands plus any custom `eval` and/or `rpc` commands you define.
 
 ## Usage
+
+Install the pre-requisites (using [scoop](https://scoop.sh/)):
+
+```powershell
+scoop install 7zip extras/vcredist2022 zig@0.9.1
+scoop hold zig
+```
+
+We hold Zig at version `0.9.1` as `relexe` hasn't been tested on anything newer.
 
 Create a release in `mix.exs` like so:
 
@@ -223,7 +232,6 @@ TODO
 
 ## Notes
 
-- This is at the 'barely works for my use case' stage of development.
 - I've only tested this on Windows.
 - I have no idea what I'm doing when it comes to writing Zig code.
 
