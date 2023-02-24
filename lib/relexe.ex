@@ -31,7 +31,7 @@ defmodule Relexe do
   end
 
   defp pre_check(release) do
-    if Enum.any?(~w(zig 7z), &(System.find_executable(&1) == nil)) do
+    if Enum.any?(~w[zig 7z], &(System.find_executable(&1) == nil)) do
       Log.error(
         :build,
         "You MUST have `zig` and `7zip` installed to use relexe, we couldn't find it in your PATH!"
