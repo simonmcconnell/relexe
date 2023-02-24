@@ -74,7 +74,8 @@ defmodule Relexe.Steps.Build.PackAndBuild.Commands do
           {:help, String.t()}
           | {:eval, String.t() | mod_fn_args()}
           | {:rpc, String.t() | mod_fn_args()}
-  @type mod_fn_args :: {module(), atom(), [{arg_name :: atom(), arg_type}]}
+  @type mod_fn_args :: {module(), atom(), [arg_name]}
+  @type arg_name :: atom | String.t()
 
   @builtin_commands ~w(start start_iex service eval rpc remote restart stop pid version)
 
@@ -88,47 +89,31 @@ defmodule Relexe.Steps.Build.PackAndBuild.Commands do
     Log.info(:step, "Parsing CLI commands")
 
     commands
-    |> preprocess()
-    |> do_parse([], release_name, os)
-  end
-
-  defp preprocess(commands) do
-    Enum.map(commands, fn
-      cmd when is_list(cmd) -> Keyword.update!(cmd, :name, &ensure_string/1)
-      name when is_binary(name) or is_atom(name) -> ensure_string(name)
-    end)
-  end
-
-  defp do_parse([], parsed, _release_name, _os) do
-    parsed
-    |> List.flatten()
+    |> Enum.map(&preprocess/1)
+    |> Enum.map(&parse_command(&1, release_name, os))
     |> Enum.reverse()
   end
 
-  defp do_parse([command | commands], parsed, release_name, os) do
-    parsed_command = parse_command(command, release_name, os)
-    do_parse(commands, [parsed_command | parsed], release_name, os)
-  end
+  defp preprocess(name) when is_binary(name),
+    do: {name, []}
 
-  defp parse_command(name, release_name, os) when is_binary(name) and name in @builtin_commands do
-    parse_command([name: name], release_name, os)
-  end
+  defp preprocess(name) when is_atom(name),
+    do: {Atom.to_string(name), []}
 
-  defp parse_command(command, release_name, os) when is_list(command) do
-    name = Keyword.fetch!(command, :name)
+  defp preprocess({name, opts}) when is_list(opts),
+    do: {ensure_string(name), opts}
 
-    if name in @builtin_commands do
-      parse_builtin_command(name, command, release_name, os)
-    else
-      parse_custom_command(name, command, release_name, os)
-    end
-  end
+  defp preprocess({name, _opts}),
+    do: raise("command options must be a list - command: #{name}")
 
-  defp parse_builtin_command("service", command, release_name, :windows) do
+  defp preprocess(command),
+    do: raise("invalid command: #{command}")
+
+  defp parse_command({"service", opts}, release_name, :windows) do
     %CompoundCommand{
       name: "service",
       help: "Add, remove, start or stop the #{release_name} Windows Service",
-      hidden: Keyword.get(command, :hidden, false),
+      hidden: Keyword.get(opts, :hidden, false),
       commands: [
         %Command{name: "add", help: "Add Windows Service"},
         %Command{name: "remove", help: "Remove the service"},
@@ -140,12 +125,13 @@ defmodule Relexe.Steps.Build.PackAndBuild.Commands do
     }
   end
 
-  defp parse_builtin_command("daemon", _command, _release_name, _os) do
+  # TODO: implement daemon for unix systems
+  defp parse_command("daemon", _command, _release_name, _os) do
     raise("not implemented")
   end
 
-  defp parse_builtin_command(name, command, release_name, _os) do
-    hidden = Keyword.get(command, :hidden, false)
+  defp parse_command({name, opts}, release_name, _os) when name in @builtin_commands do
+    hidden = Keyword.get(opts, :hidden, false)
 
     help =
       case name do
@@ -160,52 +146,47 @@ defmodule Relexe.Steps.Build.PackAndBuild.Commands do
         "remote" -> "Connects to the running system via a remote shell"
       end
 
-    data = [name: name, help: help, hidden: hidden]
-
-    data =
+    command =
       if name in ~w[eval rpc] do
-        Keyword.put(data, :args, ["expr"])
+        [name: name, help: help, hidden: hidden, args: ["expr"]]
       else
-        data
+        [name: name, help: help, hidden: hidden]
       end
 
-    struct!(Command, data)
+    struct!(Command, command)
   end
 
-  defp parse_custom_command(name, command, release_name, os) when name not in @builtin_commands do
-    help = Keyword.fetch!(command, :help)
-    hidden = Keyword.get(command, :hidden, false)
+  defp parse_command({name, opts}, release_name, os) when name not in @builtin_commands do
+    help = Keyword.fetch!(opts, :help)
+    hidden = Keyword.get(opts, :hidden, false)
 
-    data = [name: name, help: help, hidden: hidden]
+    command = [name: name, help: help, hidden: hidden]
 
     cond do
-      Keyword.has_key?(command, :rpc) ->
-        validate_rpc_or_eval_command!(command[:rpc], :rpc)
-        data = Keyword.put(data, :expr, command[:rpc])
+      Keyword.has_key?(opts, :rpc) ->
+        validate_rpc_or_eval_command!(opts[:rpc], :rpc)
+        command = Keyword.put(command, :expr, opts[:rpc])
 
         # TODO: commands with args
-        struct!(RpcCommand, data)
+        struct!(RpcCommand, command)
 
-      Keyword.has_key?(command, :eval) ->
-        validate_rpc_or_eval_command!(command[:eval], :eval)
-        data = Keyword.put(data, :expr, command[:eval])
+      Keyword.has_key?(opts, :eval) ->
+        validate_rpc_or_eval_command!(opts[:eval], :eval)
+        command = Keyword.put(command, :expr, opts[:eval])
 
         # TODO: commands with args
-        struct!(EvalCommand, data)
+        struct!(EvalCommand, command)
 
-      Keyword.has_key?(command, :commands) ->
-        nested_compound_commands? =
-          Enum.any?(command[:commands], &Keyword.has_key?(&1, :commands))
-
-        if nested_compound_commands? do
+      Keyword.has_key?(opts, :commands) ->
+        if Enum.any?(opts[:commands], &Keyword.has_key?(&1, :commands)) do
           raise ArgumentError, message: "compound commands cannot be nested"
         end
 
-        commands = Keyword.fetch!(command, :commands)
+        commands = Keyword.fetch!(opts, :commands)
         parsed_commands = parse(commands, release_name, os)
-        data = Keyword.put(data, :commands, parsed_commands)
+        command = Keyword.put(command, :commands, parsed_commands)
 
-        struct!(CompoundCommand, data)
+        struct!(CompoundCommand, command)
 
       true ->
         raise ArgumentError, message: "custom commands must contain an :rpc or :eval option"

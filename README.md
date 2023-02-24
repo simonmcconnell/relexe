@@ -33,24 +33,21 @@ def project do
             :start,
             :stop,
             :service,
-            [name: :remote, hidden: true],
-            [name: :eval, hidden: true],
-            [name: :rpc, hidden: true],
-            [
-              name: "migrate",
+            {:remote, hidden: true},
+            {:eval, hidden: true},
+            {:rpc, hidden: true},
+            {"migrate",
               help: "Run database migrations",
               eval: "Bananas.Release.migrate()"
-            ],
-            [
-              name: "create-admin",
+            },
+            {"create-admin",
               help: "Create an admin user",
               eval: {Bananas.Release, :create_admin, [:username, :password]}
-            ],
-            [
-              name: "something",
+            },
+            {"something",
               help: "Do something",
               rpc: "Bananas.Release.something()"
-            ]
+            }
           ],
           env: [
             windows: [

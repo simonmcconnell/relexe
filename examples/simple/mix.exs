@@ -18,36 +18,34 @@ defmodule Simple.MixProject do
               :start,
               :stop,
               :service,
-              [name: :remote, hidden: true],
-              [name: :eval, hidden: true],
-              [name: :rpc, hidden: true],
-              [
-                name: "migrate",
-                help: "Run database migrations",
-                eval: "Simple.Release.migrate()"
-              ],
-              [
-                name: "create-admin",
+              {:remote, hidden: true},
+              {:eval, hidden: true},
+              {:rpc, hidden: true},
+              {
+                "migrate",
+                help: "Run database migrations", eval: "Simple.Release.migrate()"
+              },
+              {
+                "create-admin",
                 help: "Create an admin user",
                 eval: {Simple.Release, :create_admin, [:username, :password]}
-              ],
-              [
-                name: "create-admin2",
+              },
+              {
+                "create-admin2",
                 help: "Create an admin user",
-                eval: {Simple.Release, :create_admin, [:username, :password]}
-              ],
-              [
-                name: "break-something",
-                help: "Break something!",
-                rpc: "Simple.break_something()"
-              ],
-              [
-                name: "create-admin-rpc",
+                eval: {Simple.Release, :create_admin, ~w[username password]}
+              },
+              {
+                "create-admin-rpc",
                 help: "Create an admin user",
                 rpc: {Simple.Release, :create_admin, [:username, :password]}
-              ]
+              },
+              {
+                "break-something",
+                help: "Break something!", rpc: "Simple.break_something()"
+              }
             ],
-            env: [windows: [RELEASE_DISTRIBUTION: "sname", RELEASE_NAME: "bananas_release"]],
+            env: [windows: [RELEASE_DISTRIBUTION: "none", RELEASE_NAME: "bananas_release", PANTS: "navy corduroy slacks"]],
             targets: [windows: [os: :windows, cpu: :x86_64]]
           ]
         ]
@@ -65,8 +63,7 @@ defmodule Simple.MixProject do
 
   defp deps do
     [
-      {:relexe, path: "../../"},
-      {:ecto, "~> 3.7"}
+      {:relexe, path: "../../"}
     ]
   end
 end
