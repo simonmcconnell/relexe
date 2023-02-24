@@ -77,8 +77,9 @@ defmodule Relexe.Steps.Build.EnvVars do
   defp create_command_dotenv_from_eex(context, output_dir, command) do
     command_name =
       case command do
-        atom when is_atom(atom) -> atom
-        keyword -> Keyword.fetch!(keyword, :name)
+        name when is_atom(name) -> name
+        name when is_binary(name) -> name
+        {name, _opts} -> name
       end
 
     app_path = File.cwd!()
@@ -102,7 +103,26 @@ defmodule Relexe.Steps.Build.EnvVars do
 
     contents =
       env
-      |> Enum.map(fn {key, value} -> "#{key}=#{value}" end)
+      |> Enum.map(fn {key, value} ->
+        contains_spaces? = String.contains?(value, " ")
+        start_quote? = String.starts_with?(value, "\"")
+        end_quote? = String.ends_with?(value, "\"")
+
+        cond do
+          not contains_spaces? ->
+            "#{key}=#{value}"
+
+          start_quote? and end_quote? ->
+            "#{key}=#{value}"
+
+          not start_quote? and not end_quote? ->
+            ~s|#{key}="#{value}"|
+
+          true ->
+            raise ArgumentError,
+                  "environment variables containing spaces must be enclosed in double quotes: #{value}"
+        end
+      end)
       |> Enum.join(line_ending)
 
     File.write!(path, contents)
