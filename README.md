@@ -61,7 +61,7 @@ Run `mix release` and you'll have `bananas.exe` in the `bin` folder of your rele
 
 The `help` for this example would be:
 
-```
+```shell
 USAGE:
   bananas.exe [COMMAND]
 
@@ -79,7 +79,7 @@ HELP:
 
 Running `bananas create-admin` would prompt the user for the `username` and `password`:
 
-```
+```shell
 > bananas.exe create-admin
 username: Eric
 password: BananaMan
@@ -160,13 +160,13 @@ releases: [
 ]
 ```
 
-```
+```dotenv
 # .env
 RELEASE_DISTRIBUTION=none
 RELEASE_NODE=bananas69
 ```
 
-```
+```dotenv
 # .env.sales
 RELEASE_DISTRIBUTION=name
 RELEASE_NODE=banana_sales
@@ -178,12 +178,12 @@ Environment variables can also be specified by way of an `EEx` template.  Templa
 
 For example, to recreate the Mix Release `daemon` environment variables, we create a `/rel/relexe/.env.linux.daemon.eex`.
 
-```
+```bash
 HEART_COMMAND="<%= @context.mix_release.path %>/bin/<%= @context.mix_release.name %> daemon"
 ELIXIR_ERL_OPTIONS="-heart"
 ```
 
-**NOTE: I'm not sure if this actually works, as I don't deploy to linux/macos.  Please let me know if it doesn't :)**
+**NOTE: I'm not sure if this actually works, as I don't deploy to linux/macos.**
 
 ## Plugins
 
