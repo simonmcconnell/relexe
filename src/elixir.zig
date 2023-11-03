@@ -20,7 +20,44 @@ const RunMode = enum {
     iex,
 };
 
-fn elixir(allocator: Allocator, rel: Release, args: []const []const u8) !void {
+const Arg = enum {
+    // execution options
+    @"--werl",
+    @"+iex",
+    @"+elixirc",
+    // eval paramters
+    @"-e",
+    @"--eval",
+    @"--rpc-eval",
+    // elixir parameters
+    @"-r",
+    @"-pr",
+    @"-pa",
+    @"-pz",
+    @"-v",
+    @"--version",
+    // @"--app", DEPRECATED?
+    @"--no-halt",
+    @"--remsh",
+    @"--dot-iex",
+    @"--dbg",
+    // erlang parameters
+    @"--boot",
+    @"--boot-var",
+    @"--cookie",
+    @"--hidden",
+    @"--detached",
+    @"--erl-config",
+    @"--logger-otp-reports",
+    @"--logger-sasl-reports",
+    @"--sname",
+    @"--vm-args",
+    @"--erl",
+    // @"-mode", DEPRECATED?
+    @"--pipe-to",
+};
+
+pub fn elixir(allocator: Allocator, rel: Release, args: []const []const u8) !void {
     var ex = std.ArrayList([]const u8).init(allocator);
     defer ex.deinit();
     var erl = std.ArrayList([]const u8).init(allocator);
@@ -37,111 +74,91 @@ fn elixir(allocator: Allocator, rel: Release, args: []const []const u8) !void {
     const erts_bin = try fs.path.join(allocator, &[_][]const u8{ rel.root, erts_dir, "bin" });
 
     var arg: ?[]const u8 = undefined;
-    var arg1: ?[]const u8 = undefined;
-    var arg2: ?[]const u8 = undefined;
 
     while (true) {
         arg = args_iter.next() catch break;
         if (arg == null) break;
-        if (mem.eql(u8, arg.?, "")) break;
-        if (endLoop) try ex.append(arg.?);
+        if (mem.eql(u8, arg, "")) break;
+        if (endLoop) {
+            try ex.append(arg);
+            continue;
+        }
 
-        // execution options
-        if (builtin.os.tag == .windows and mem.eql(u8, arg.?, "--werl")) {
-            useWerl = true;
-        } else if (mem.eql(u8, arg.?, "+iex")) {
-            try ex.append("+iex");
-            runMode = RunMode.iex;
-        } else if (mem.eql(u8, arg.?, "+elixirc")) {
-            try ex.append("+elixirc");
-            runMode = RunMode.elixirc;
-        }
-        // eval paramters
-        else if (mem.eql(u8, arg.?, "-e")) {
-            arg1 = try args_iter.next();
-            try ex.appendSlice(&.{ "--e", arg1.? });
-        } else if (mem.eql(u8, arg.?, "--eval")) {
-            arg1 = try args_iter.next();
-            try ex.appendSlice(&.{ "--eval", arg1.? });
-        } else if (mem.eql(u8, arg.?, "--rpc-eval")) {
-            arg1 = try args_iter.next();
-            arg2 = try args_iter.next();
-            try ex.appendSlice(&.{ "--rpc-eval", arg1.?, arg2.? });
-        }
-        // elixir parameters
-        else if (mem.eql(u8, arg.?, "-r")) {
-            arg1 = try args_iter.next();
-            try ex.appendSlice(&.{ "-r", arg1.? });
-        } else if (mem.eql(u8, arg.?, "-pr")) {
-            arg1 = try args_iter.next();
-            try ex.appendSlice(&.{ "-pr", arg1.? });
-        } else if (mem.eql(u8, arg.?, "-pa")) {
-            arg1 = try args_iter.next();
-            try ex.appendSlice(&.{ "-pa", arg1.? });
-        } else if (mem.eql(u8, arg.?, "-pz")) {
-            arg1 = try args_iter.next();
-            try ex.appendSlice(&.{ "-pz", arg1.? });
-        } else if (mem.eql(u8, arg.?, "-v")) {
-            try ex.append("-v");
-        } else if (mem.eql(u8, arg.?, "--app")) {
-            arg1 = try args_iter.next();
-            try ex.appendSlice(&.{ "--app", arg1.? });
-        } else if (mem.eql(u8, arg.?, "--no-halt")) {
-            try ex.append("--no-halt");
-        } else if (mem.eql(u8, arg.?, "--remsh")) {
-            arg1 = try args_iter.next();
-            try ex.appendSlice(&.{ "--remsh", arg1.? });
-        } else if (mem.eql(u8, arg.?, "--dot-iex")) {
-            arg1 = try args_iter.next();
-            try ex.appendSlice(&.{ "--dot-iex", arg1.? });
-        }
-        // erlang parameters
-        else if (mem.eql(u8, arg.?, "--boot")) {
-            arg1 = try args_iter.next();
-            try erl.appendSlice(&.{ "-boot", arg1.? });
-        } else if (mem.eql(u8, arg.?, "--boot-var")) {
-            arg1 = try args_iter.next();
-            arg2 = try args_iter.next();
-            try erl.appendSlice(&.{ "-boot_var", arg1.?, arg2.? });
-        } else if (mem.eql(u8, arg.?, "--cookie")) {
-            arg1 = try args_iter.next();
-            try erl.appendSlice(&.{ "-setcookie", arg1.? });
-        } else if (mem.eql(u8, arg.?, "--hidden")) {
-            try erl.append("-hidden");
-        } else if (mem.eql(u8, arg.?, "--detached")) {
-            log.warn("the --detached option is deprecated", .{});
-            try erl.append("-detached");
-        } else if (mem.eql(u8, arg.?, "--erl-config")) {
-            arg1 = try args_iter.next();
-            try erl.appendSlice(&.{ "-config", arg1.? });
-        } else if (mem.eql(u8, arg.?, "--logger-otp-reports")) {
-            arg1 = try args_iter.next();
-            try erl.appendSlice(&.{ "-logger", "handle_otp_reports", arg1.? });
-        } else if (mem.eql(u8, arg.?, "--logger-sasl-reports")) {
-            arg1 = try args_iter.next();
-            try erl.appendSlice(&.{ "-logger", "handle_sasl_reports", arg1.? });
-        } else if (mem.eql(u8, arg.?, "--name")) {
-            arg1 = try args_iter.next();
-            try erl.appendSlice(&.{ "-name", arg1.? });
-        } else if (mem.eql(u8, arg.?, "--sname")) {
-            arg1 = try args_iter.next();
-            try erl.appendSlice(&.{ "-sname", arg1.? });
-        } else if (mem.eql(u8, arg.?, "--vm-args")) {
-            arg1 = try args_iter.next();
-            try erl.appendSlice(&.{ "-args_file", arg1.? });
-        } else if (mem.eql(u8, arg.?, "-mode")) {
-            arg1 = try args_iter.next();
-            try before_extra.appendSlice(&.{ "-mode", arg1.? });
-        } else if (mem.eql(u8, arg.?, "--pipe-to")) {
-            if (builtin.os.tag == .windows) fatal("--pipe-to option is not supported on Windows", .{});
-            // TODO: handle other OSs
-        } else {
-            if (arg1) |a| try ex.append(a);
-            endLoop = true;
+        var argenum = std.meta.stringToEnum(Arg, arg) orelse return;
+
+        switch (argenum) {
+            // execution options
+            .@"--werl" => {
+                if (builtin.os.tag == .windows) useWerl = true;
+            },
+            .@"+iex" => {
+                try ex.append("+iex");
+                runMode = RunMode.iex;
+            },
+            .@"+elixirc" => {
+                try ex.append("+elixirc");
+                runMode = RunMode.elixirc;
+            },
+
+            // eval paramters
+            .@"-e", .@"--eval", .@"--rpc-eval" => {
+                appendArgs(&.{arg}, 1, arg, &args_iter, &ex);
+            },
+
+            // elixir parameters
+            .@"-r", .@"-pr", .@"-pa", .@"-pz", .@"--remsh", .@"--dot-iex", .@"--dbg" => {
+                appendArgs(&.{arg}, 1, arg, &args_iter, &ex);
+            },
+            .@"-v", .@"--version", .@"--no-halt" => {
+                try ex.append(arg);
+            },
+
+            // erlang parameters
+            .@"--boot" => {
+                appendArgs(&.{"-boot"}, 1, arg, &args_iter, &erl);
+            },
+            .@"--boot-var" => {
+                appendArgs(&.{"-boot_var"}, 2, arg, &args_iter, &erl);
+            },
+            .@"--cookie" => {
+                appendArgs(&.{"-setcookie"}, 1, arg, &args_iter, &erl);
+            },
+            .@"--hidden" => {
+                try erl.append("-hidden");
+            },
+            .@"--erl-config" => {
+                appendArgs(&.{"-config"}, 1, arg, &args_iter, &erl);
+            },
+            .@"--logger-otp-reports" => {
+                appendArgs(&.{ "-logger", "handle_otp_reports" }, 1, arg, &args_iter, &erl);
+            },
+            .@"--logger-sasl-reports" => {
+                appendArgs(&.{ "-logger", "handle_sasl_reports" }, 1, arg, &args_iter, &erl);
+            },
+            .@"--name" => {
+                appendArgs(&.{"-name"}, 1, arg, &args_iter, &erl);
+            },
+            .@"--sname" => {
+                appendArgs(&.{"-sname"}, 1, arg, &args_iter, &erl);
+            },
+            .@"--vm-args" => {
+                appendArgs(&.{"-args_file"}, 1, arg, &args_iter, &erl);
+            },
+            .@"--erl" => {
+                appendArgs(&.{}, 0, arg, &args_iter, &before_extra);
+            },
+            .@"--pipe-to" => {
+                if (builtin.os.tag == .windows) fatal("--pipe-to option is not supported on Windows", .{});
+                // TODO: handle other OSs
+            },
+            else => {
+                endLoop = true;
+                try ex.append(arg);
+            },
         }
     }
 
-    //// expand erl libs - this doesn't get called in the release's batch file
+    //// expand erl libs - this doesn't get called in the release's batch file - doesn't exist in the 1.15.7 batch file
     // var ext_libs = String.init(allocator);
     // defer ext_libs.deinit();
     // var lib_dir_path = try fs.path.resolve(allocator, &[_][]const u8{ rel.root, "lib" });
@@ -161,19 +178,35 @@ fn elixir(allocator: Allocator, rel: Release, args: []const []const u8) !void {
 
     // enable virtual terminal sequences
     // https://docs.microsoft.com/en-us/windows/console/classic-vs-vt
-    if (builtin.os.tag == .windows) win_ansi.enable_virtual_term();
+    if (builtin.os.tag == .windows) {
+        if (win_ansi.enable_virtual_term()) {
+            try before_extra.insertSlice(0, &.{ "-elixir", "ansi_enabled", "true" });
+        }
+    }
 
-    const exe = try fs.path.join(allocator, &[_][]const u8{ erts_bin, if (useWerl) "werl.exe" else "erl.exe" });
-    log.debug("executable path: {s}", .{exe});
+    const exe = if (useWerl) "werl.exe" else "erl.exe";
+    const exe_path = try fs.path.join(allocator, &[_][]const u8{ erts_bin, exe });
+    log.debug("executable path: {s}", .{exe_path});
+
+    if (runMode == RunMode.iex) {
+        try before_extra.insertSlice(0, &.{ "-s", "elixir", "start_iex" });
+    } else {
+        try before_extra.insertSlice(0, &.{ "-s", "elixir", "start_cli" });
+    }
+
+    const lib = try fs.path.join(allocator, &[_][]const u8{ rel.root, "lib" });
+    const ebin = try fs.path.join(allocator, &[_][]const u8{ "lib", "elixir", "ebin" });
+    try before_extra.insertSlice(0, &.{ "-noshell", "-elixir_root", lib, "-pa", ebin });
 
     var argv = std.ArrayList([]const u8).init(allocator);
     defer argv.deinit();
 
-    try argv.append(exe);
-    if (process.getEnvVarOwned(allocator, "ELIXIR_ERL_OPTIONS")) |elixir_erl_options| try argv.append(elixir_erl_options) else |_| {}
+    try argv.append(exe_path);
+    // this is where !ext_libs! is inserted
+    if (process.getEnvVarOwned(allocator, "ELIXIR_ERL_OPTIONS")) |elixir_erl_options| {
+        try argv.append(elixir_erl_options);
+    } else |_| {}
     try argv.appendSlice(erl.items);
-    if (runMode != RunMode.iex) try argv.appendSlice(&.{ "-noshell", "-s", "elixir", "start_cli" });
-    try argv.appendSlice(&.{ "-elixir", "ansi_enabled", "true" });
     try argv.appendSlice(before_extra.items);
     try argv.append("-extra");
     try argv.appendSlice(ex.items);
@@ -191,6 +224,19 @@ fn elixir(allocator: Allocator, rel: Release, args: []const []const u8) !void {
     child_proc.cwd = rel.vsn_dir;
     const exec_result = try child_proc.spawnAndWait();
     log.debug("Elixir run result: {s}", .{exec_result});
+}
+
+fn appendArgs(prefix_args: [][]const u8, arg_count: usize, arg: []const u8, args_iter: *SliceIterator, args_slice: *std.ArrayList([]const u8)) void {
+    var i: usize = 0;
+    var argi: ?[]const u8 = undefined;
+
+    try args_slice.appendSlice(&.{prefix_args});
+
+    while (i < arg_count) {
+        argi = args_iter.next() orelse fatal("{s} requires an argument", .{arg});
+        args_slice.append(argi);
+        i += 1;
+    }
 }
 
 fn putReleaseValues(map: *std.BufMap, rel: Release) !void {
@@ -261,140 +307,4 @@ fn putDotEnvValues(allocator: Allocator, map: *std.BufMap, rel: Release) !void {
     while (iter.next()) |entry| {
         try map.put(entry.key_ptr.*, entry.value_ptr.*);
     }
-}
-
-pub fn start(allocator: Allocator, rel: Release) !void {
-    var args = try std.ArrayList([]const u8).initCapacity(allocator, 14);
-    defer args.deinit();
-    try args.appendSlice(&.{
-        rel.extra,
-        "--cookie",
-        rel.cookie,
-    });
-    // distribution flag
-    if (!mem.eql(u8, rel.distribution, "none")) {
-        try args.appendSlice(&.{
-            try fmt.allocPrint(allocator, "--{s}", .{rel.distribution}),
-            rel.node,
-        });
-    }
-    try args.appendSlice(&.{
-        "-mode",
-        rel.mode,
-        "--erl-config",
-        rel.sys_config,
-        "--boot",
-        try fmt.allocPrint(allocator, "{s}\\{s}", .{ rel.vsn_dir, rel.boot_script }),
-        "--boot-var",
-        "RELEASE_LIB",
-        try fmt.allocPrint(allocator, "{s}\\lib", .{rel.root}),
-        "--vm-args",
-        rel.vm_args,
-    });
-
-    try elixir(allocator, rel, args.items);
-}
-
-pub fn iex(allocator: Allocator, rel: Release, iex_args: []const []const u8) !void {
-    var args = std.ArrayList([]const u8).init(allocator);
-    defer args.deinit();
-    try args.appendSlice(&.{ "--no-halt", "--erl", "-noshell -user Elixir.IEx.CLI", "+iex" });
-    if (iex_args.len > 0) try args.appendSlice(iex_args);
-    for (args.items, 0..) |arg, i| log.debug("iex arg[{d}] {s}", .{ i, arg });
-    try elixir(
-        allocator,
-        rel,
-        args.items,
-    );
-}
-
-pub fn remote(allocator: Allocator, rel: Release) !void {
-    var args = std.ArrayList([]const u8).init(allocator);
-    defer args.deinit();
-
-    try args.appendSlice(&.{ "--werl", "--hidden", "--cookie", rel.cookie });
-    // distribution flag
-    if (!mem.eql(u8, rel.distribution, "none")) {
-        const random = std.crypto.random.intRangeAtMost(u16, 0, 32767);
-        try args.appendSlice(&.{
-            try fmt.allocPrint(allocator, "--{s}", .{rel.distribution}),
-            try fmt.allocPrint(allocator, "rem-{d}-{s}", .{ random, rel.node }),
-        });
-    }
-    try args.appendSlice(&.{
-        "--boot",
-        try fmt.allocPrint(allocator, "{s}\\{s}", .{ rel.vsn_dir, rel.boot_script_clean }),
-        "--boot-var",
-        "RELEASE_LIB",
-        try fmt.allocPrint(allocator, "{s}\\lib", .{rel.root}),
-        "--vm-args",
-        rel.vm_args,
-        "--remsh",
-        rel.node,
-    });
-
-    try iex(allocator, rel, args.items);
-}
-
-pub fn rpc(allocator: Allocator, rel: Release, expr: []const u8) !void {
-    var args = std.ArrayList([]const u8).init(allocator);
-    defer args.deinit();
-    try args.appendSlice(&.{
-        "--hidden",
-        "--cookie",
-        rel.cookie,
-    });
-    // distribution flag
-    if (!mem.eql(u8, rel.distribution, "none")) {
-        const random = std.crypto.random.intRangeAtMost(u16, 0, 32767);
-        try args.appendSlice(&.{
-            try fmt.allocPrint(allocator, "--{s}", .{rel.distribution}),
-            try fmt.allocPrint(allocator, "rpc-{d}-{s}", .{ random, rel.node }),
-        });
-    }
-    try args.appendSlice(
-        &.{
-            "--boot",
-            try fmt.allocPrint(allocator, "{s}\\{s}", .{ rel.vsn_dir, rel.boot_script_clean }),
-            "--boot-var",
-            "RELEASE_LIB",
-            try fmt.allocPrint(allocator, "{s}\\lib", .{rel.root}),
-            "--vm-args",
-            rel.vm_args,
-            "--rpc-eval",
-            rel.node,
-            expr,
-        },
-    );
-    try elixir(allocator, rel, args.items);
-}
-
-pub fn stop(allocator: Allocator, rel: Release) !void {
-    try rpc(allocator, rel, "System.stop()");
-}
-
-pub fn restart(allocator: Allocator, rel: Release) !void {
-    try rpc(allocator, rel, "System.restart()");
-}
-
-pub fn pid(allocator: Allocator, rel: Release) !void {
-    try rpc(allocator, rel, "IO.puts(System.pid())");
-}
-
-pub fn eval(allocator: Allocator, rel: Release, expr: []const u8) !void {
-    try elixir(allocator, rel, &.{
-        "--eval",
-        expr,
-        "--cookie",
-        rel.cookie,
-        "--erl-config",
-        rel.sys_config,
-        "--boot",
-        try fmt.allocPrint(allocator, "{s}\\{s}", .{ rel.vsn_dir, rel.boot_script_clean }),
-        "--boot-var",
-        "RELEASE_LIB",
-        try fmt.allocPrint(allocator, "{s}\\lib", .{rel.root}),
-        "--vm-args",
-        rel.vm_args,
-    });
 }

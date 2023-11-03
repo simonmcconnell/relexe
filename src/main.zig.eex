@@ -14,7 +14,6 @@ const DotEnv = @import("dotenv.zig").DotEnv;
 
 const release = @import("release.zig");
 const service = @import("service.zig");
-const elixir = @import("elixir.zig");
 const utils = @import("utils.zig");
 const fatal = utils.fatal;
 const Release = release.Release;
@@ -55,34 +54,34 @@ pub fn main() anyerror!void {
                     <% "start" -> %>
                         } else if (mem.eql(u8, command, "start")) {
                             r.extra = "--no-halt";
-                            try elixir.start(allocator, r);
+                            try release.start(allocator, r);
 
                     <% "start_iex" -> %>
                         } else if (mem.eql(u8, command, "start_iex")) {
                             if (builtin.os.tag == .windows) r.extra = "--werl";
-                            try elixir.iex(allocator, r, command_args[0..]);
+                            try release.iex(allocator, r, command_args[0..]);
 
                     <% "stop" -> %>
                         } else if (mem.eql(u8, command, "stop")) {
-                            try elixir.stop(allocator, r);
+                            try release.stop(allocator, r);
 
                     <% "restart" -> %>
                         } else if (mem.eql(u8, command, "restart")) {
-                            try elixir.restart(allocator, r);
+                            try release.restart(allocator, r);
 
                     <% "pid" -> %>
                         } else if (mem.eql(u8, command, "pid")) {
-                            try elixir.pid(allocator, r);
+                            try release.pid(allocator, r);
 
                     <% "remote" -> %>
                         } else if (mem.eql(u8, command, "pid")) {
-                            try elixir.remote(allocator, r);
+                            try release.remote(allocator, r);
 
                     <% "eval" -> %>
                         } else if (mem.eql(u8, command, "eval")) {
                             try stdout.print("eval command: ", .{});
                             if (try rdr.readUntilDelimiterOrEofAlloc(allocator, '\n', 4096)) |user_input| {
-                                try elixir.eval(allocator, r, trimCrFromEnd(user_input))<%= if not hidden do %> else try stdout.writeAll(usage("eval"))<% end %>;
+                                try release.eval(allocator, r, trimCrFromEnd(user_input))<%= if not hidden do %> else try stdout.writeAll(usage("eval"))<% end %>;
                             } else {
                                 try stdout.print("Bad input!", .{});
                             }
@@ -91,7 +90,7 @@ pub fn main() anyerror!void {
                         } else if (mem.eql(u8, command, "rpc")) {
                             try stdout.print("rpc command: ", .{});
                             if (try rdr.readUntilDelimiterOrEofAlloc(allocator, '\n', 4096)) |user_input| {
-                                try elixir.rpc(allocator, r, trimCrFromEnd(user_input))<%= if not hidden do %> else try stdout.writeAll(usage("rpc"))<% end %>;
+                                try release.rpc(allocator, r, trimCrFromEnd(user_input))<%= if not hidden do %> else try stdout.writeAll(usage("rpc"))<% end %>;
                             } else {
                                 try stdout.print("Bad input!", .{});
                             }
@@ -99,7 +98,7 @@ pub fn main() anyerror!void {
 
             <% %Commands.EvalCommand{name: name, expr: expr} when is_binary(expr) -> %>
                 } else if (mem.eql(u8, command, "<%= name %>")) {
-                    try elixir.eval(allocator, r, "<%= expr %>");
+                    try release.eval(allocator, r, "<%= expr %>");
 
             <% %Commands.EvalCommand{name: name, expr: {m, f, a}} -> %>
                 } else if (mem.eql(u8, command, "<%= name %>")) {
@@ -118,11 +117,11 @@ pub fn main() anyerror!void {
                         "<%= "#{m}.#{f}(#{args_substitutions(a)})" %>",
                         .{ <%= for {_, i} <- Enum.with_index(a), do: "argValues[#{i}], " %> },
                     );
-                    try elixir.eval(allocator, r, expr);
+                    try release.eval(allocator, r, expr);
 
             <% %Commands.RpcCommand{name: name, expr: expr} when is_binary(expr) -> %>
                 } else if (mem.eql(u8, command, "<%= name %>")) {
-                    try elixir.rpc(allocator, r, "<%= expr %>");
+                    try release.rpc(allocator, r, "<%= expr %>");
 
             <% %Commands.RpcCommand{name: name, expr: {m, f, a}} -> %>
                 } else if (mem.eql(u8, command, "<%= name %>")) {
@@ -141,7 +140,7 @@ pub fn main() anyerror!void {
                         "<%= "#{m}.#{f}(#{args_substitutions(a)})" %>",
                         .{ <%= for {_, i} <- Enum.with_index(a), do: "argValues[#{i}], " %> },
                     );
-                    try elixir.rpc(allocator, r, expr);
+                    try release.rpc(allocator, r, expr);
 
             <% %Commands.CompoundCommand{} = cmd -> %>
                 <%= case cmd.name do %>

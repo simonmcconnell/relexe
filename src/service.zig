@@ -1,5 +1,5 @@
 const std = @import("std");
-const s = std.fmt.allocPrint;
+const fmt = std.fmt;
 const fs = std.fs;
 const log = std.log;
 const mem = std.mem;
@@ -41,33 +41,34 @@ const ErlSrvCommand = enum {
 };
 
 fn erlsrvArgs(a: Allocator, command: []const u8, erlsrv_path: []const u8, rel: Release) ![][]const u8 {
-    return switch (command) {
+    const erl_srv_command = std.meta.stringToEnum(ErlSrvCommand, command);
+    return switch (erl_srv_command) {
         .add => [_][]const u8{
             erlsrv_path,
             "add",
-            try s(a, "{s}_{s}", .{ rel.name, rel.name }),
-            try s(a, "-{s}", .{rel.distribution}),
+            try fmt.allocPrint(a, "{s}_{s}", .{ rel.name, rel.name }),
+            try fmt.allocPrint(a, "-{s}", .{rel.distribution}),
             rel.node,
             "-env",
-            try s(a, "RELEASE_ROOT={s}", .{rel.root}),
+            try fmt.allocPrint(a, "RELEASE_ROOT={s}", .{rel.root}),
             "-env",
-            try s(a, "RELEASE_NAME={s}", .{rel.name}),
+            try fmt.allocPrint(a, "RELEASE_NAME={s}", .{rel.name}),
             "-env",
-            try s(a, "RELEASE_VSN={s}", .{rel.vsn}),
+            try fmt.allocPrint(a, "RELEASE_VSN={s}", .{rel.vsn}),
             "-env",
-            try s(a, "RELEASE_MODE={s}", .{rel.mode}),
+            try fmt.allocPrint(a, "RELEASE_MODE={s}", .{rel.mode}),
             "-env",
-            try s(a, "RELEASE_COOKIE={s}", .{rel.cookie}),
+            try fmt.allocPrint(a, "RELEASE_COOKIE={s}", .{rel.cookie}),
             "-env",
-            try s(a, "RELEASE_NODE={s}", .{rel.node}),
+            try fmt.allocPrint(a, "RELEASE_NODE={s}", .{rel.node}),
             "-env",
-            try s(a, "RELEASE_VM_ARGS={s}", .{rel.vm_args}),
+            try fmt.allocPrint(a, "RELEASE_VM_ARGS={s}", .{rel.vm_args}),
             "-env",
-            try s(a, "RELEASE_TMP={s}", .{rel.tmp}),
+            try fmt.allocPrint(a, "RELEASE_TMP={s}", .{rel.tmp}),
             "-env",
-            try s(a, "RELEASE_SYS_CONFIG={s}", .{rel.sys_config}),
+            try fmt.allocPrint(a, "RELEASE_SYS_CONFIG={s}", .{rel.sys_config}),
             "-args",
-            try s(
+            try fmt.allocPrint(
                 a,
                 "-setcookie {s} -config {s} -mode {s} -boot {s}\\start -boot_var RELEASE_LIB {s}\\lib -args_file {s}\\vm.args",
                 .{
@@ -84,7 +85,7 @@ fn erlsrvArgs(a: Allocator, command: []const u8, erlsrv_path: []const u8, rel: R
         .remove, .start, .stop, .enable, .disable => [_][]const u8{
             erlsrv_path,
             command,
-            try s(a, "{s}_{s}", .{ rel.name, rel.name }),
+            try fmt.allocPrint(a, "{s}_{s}", .{ rel.name, rel.name }),
         },
         .list, .help => [_][]const u8{ erlsrv_path, command },
     };
@@ -101,7 +102,7 @@ fn erlsrv(a: Allocator, command: []const u8, rel: Release) !void {
 }
 
 fn erlsrvPath(a: Allocator, rel: Release) ![]const u8 {
-    const erts_dir = try s(a, "erts-{s}", .{rel.erts_vsn});
+    const erts_dir = try fmt.allocPrint(a, "erts-{s}", .{rel.erts_vsn});
     const erts_path = try fs.path.resolve(a, &[_][]const u8{ rel.root, erts_dir });
     if (pathExists(erts_path)) return try fs.path.join(a, &[_][]const u8{ erts_path, "bin", "erlsrv.exe" });
     return "erlsrv.exe";
@@ -113,7 +114,7 @@ fn pathExists(path: []const u8) bool {
 }
 
 test "service.erlsrvArgs" {
-    const a = testing.allocator;
+    const a = std.testing.allocator;
     const rel = Release{
         .boot_script = "boot_script",
         .boot_script_clean = "boot_script_clean",
@@ -137,16 +138,16 @@ test "service.erlsrvArgs" {
 
     const erlsrv_path = "erlsrv.exe";
 
-    const add = erlsrvArgs(a, "add", erlsrv_path, rel);
-    const remove = erlsrvArgs(a, "remove", erlsrv_path, rel);
-    const start = erlsrvArgs(a, "start", erlsrv_path, rel);
-    const stop = erlsrvArgs(a, "stop", erlsrv_path, rel);
-    const enable = erlsrvArgs(a, "enable", erlsrv_path, rel);
-    const disable = erlsrvArgs(a, "disable", erlsrv_path, rel);
-    const list = erlsrvArgs(a, "list", erlsrv_path, rel);
-    const help = erlsrvArgs(a, "help", erlsrv_path, rel);
+    const add_args = erlsrvArgs(a, "add", erlsrv_path, rel);
+    const remove_args = erlsrvArgs(a, "remove", erlsrv_path, rel);
+    const start_args = erlsrvArgs(a, "start", erlsrv_path, rel);
+    const stop_args = erlsrvArgs(a, "stop", erlsrv_path, rel);
+    const enable_args = erlsrvArgs(a, "enable", erlsrv_path, rel);
+    const disable_args = erlsrvArgs(a, "disable", erlsrv_path, rel);
+    const list_args = erlsrvArgs(a, "list", erlsrv_path, rel);
+    const help_args = erlsrvArgs(a, "help", erlsrv_path, rel);
 
-    try testing.expectEqualSlices(add, [_][]const u8{
+    try std.testing.expectEqualSlices(add_args, [_][]const u8{
         "erlsrv.exe",
         "add",
         "name_name",
@@ -173,11 +174,11 @@ test "service.erlsrvArgs" {
         "-args",
         "-setcookie cookie -config sys_config -mode mode -boot vsn_dir\\start -boot_var RELEASE_LIB root\\lib -args_file vsn_dir\\vm.args",
     });
-    try testing.expectEqualSlices(remove, [_][]const u8{ "erlsrv.exe", "remove", "name_name" });
-    try testing.expectEqualSlices(start, [_][]const u8{ "erlsrv.exe", "start", "name_name" });
-    try testing.expectEqualSlices(stop, [_][]const u8{ "erlsrv.exe", "stop", "name_name" });
-    try testing.expectEqualSlices(enable, [_][]const u8{ "erlsrv.exe", "enable", "name_name" });
-    try testing.expectEqualSlices(disable, [_][]const u8{ "erlsrv.exe", "disable", "name_name" });
-    try testing.expectEqualSlices(list, [_][]const u8{ "erlsrv.exe", "list" });
-    try testing.expectEqualSlices(help, [_][]const u8{ "erlsrv.exe", "help" });
+    try std.testing.expectEqualSlices(remove_args, [_][]const u8{ "erlsrv.exe", "remove", "name_name" });
+    try std.testing.expectEqualSlices(start_args, [_][]const u8{ "erlsrv.exe", "start", "name_name" });
+    try std.testing.expectEqualSlices(stop_args, [_][]const u8{ "erlsrv.exe", "stop", "name_name" });
+    try std.testing.expectEqualSlices(enable_args, [_][]const u8{ "erlsrv.exe", "enable", "name_name" });
+    try std.testing.expectEqualSlices(disable_args, [_][]const u8{ "erlsrv.exe", "disable", "name_name" });
+    try std.testing.expectEqualSlices(list_args, [_][]const u8{ "erlsrv.exe", "list" });
+    try std.testing.expectEqualSlices(help_args, [_][]const u8{ "erlsrv.exe", "help" });
 }
