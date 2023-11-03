@@ -9,22 +9,11 @@ defmodule Simple.Release do
   end
 
   def migrate do
-    IO.puts("migrating... (this will crash as nothing is setup in this example)")
-    load_app()
-    configure_repo()
-
-    for repo <- repos() do
-      {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :up, all: true))
-    end
+    IO.puts("migrating...")
   end
 
   def rollback(repo, version) do
-    load_app()
-    {:ok, _, _} = Ecto.Migrator.with_repo(repo, &Ecto.Migrator.run(&1, :down, to: version))
-  end
-
-  defp repos do
-    Application.fetch_env!(@app, :ecto_repos)
+    IO.puts("rolling back #{repo} to #{version}")
   end
 
   defp start_app do
@@ -37,10 +26,5 @@ defmodule Simple.Release do
   defp load_app do
     IO.puts("loading app")
     Application.load(@app)
-  end
-
-  defp configure_repo do
-    config = Vapor.load!(Simple.Config)
-    Application.put_env(@app, Simple.Repo, Keyword.new(config.repo))
   end
 end
