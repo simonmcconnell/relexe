@@ -182,7 +182,7 @@ fn elixir(allocator: Allocator, rel: Release, args: []const []const u8) !void {
     try putReleaseValues(&env_map, rel);
     try putDotEnvValues(allocator, &env_map, rel);
 
-    for (argv.items) |a, i| log.debug("erl.exe arg[{d: >2}] {s}", .{ i, a });
+    for (argv.items, 0..) |a, i| log.debug("erl.exe arg[{d: >2}] {s}", .{ i, a });
 
     const child_proc = try std.ChildProcess.init(argv.items, allocator);
     child_proc.env_map = &env_map;
@@ -300,7 +300,7 @@ pub fn iex(allocator: Allocator, rel: Release, iex_args: []const []const u8) !vo
     defer args.deinit();
     try args.appendSlice(&.{ "--no-halt", "--erl", "-noshell -user Elixir.IEx.CLI", "+iex" });
     if (iex_args.len > 0) try args.appendSlice(iex_args);
-    for (args.items) |arg, i| log.debug("iex arg[{d}] {s}", .{ i, arg });
+    for (args.items, 0..) |arg, i| log.debug("iex arg[{d}] {s}", .{ i, arg });
     try elixir(
         allocator,
         rel,

@@ -46,7 +46,7 @@ pub const DotEnv = struct {
             DoubleQuote,
         } = .SkipWhitespace;
 
-        for (str) |c, i| {
+        for (str, 0..) |c, i| {
             switch (state) {
                 .SkipWhitespace => switch (c) {
                     0x09, 0x0A, 0x0D, 0x20 => {
