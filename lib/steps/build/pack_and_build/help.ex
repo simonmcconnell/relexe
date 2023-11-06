@@ -35,7 +35,6 @@ defmodule Relexe.Steps.Build.PackAndBuild.Help do
       |> Enum.reject(fn command -> command.hidden end)
       |> commands_help(executable, default_command)
 
-    # TODO: put .exe after the executable name for windows builds
     usage = """
     \\\\USAGE:
     \\\\  #{executable} [COMMAND]
