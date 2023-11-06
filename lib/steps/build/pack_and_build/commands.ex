@@ -53,7 +53,6 @@ defmodule Relexe.Steps.Build.PackAndBuild.Commands do
   alias Burrito.Builder.Log
 
   @type t :: Command.t() | CompoundCommand.t() | EvalCommand.t() | RpcCommand.t()
-  @type arg_type :: :string | :integer | :float
 
   @type command ::
           :start
@@ -74,7 +73,11 @@ defmodule Relexe.Steps.Build.PackAndBuild.Commands do
           {:help, String.t()}
           | {:eval, String.t() | mod_fn_args()}
           | {:rpc, String.t() | mod_fn_args()}
-  @type mod_fn_args :: {module(), atom(), [{arg_name :: atom(), arg_type}]}
+  @type mod_fn_args :: {
+          module(),
+          atom(),
+          [{arg_name :: atom(), arg_type :: :string | :integer | :float}]
+        }
 
   @builtin_commands ~w(start start_iex service eval rpc remote restart stop pid version)
 
@@ -182,15 +185,11 @@ defmodule Relexe.Steps.Build.PackAndBuild.Commands do
       Keyword.has_key?(command, :rpc) ->
         validate_rpc_or_eval_command!(command[:rpc], :rpc)
         data = Keyword.put(data, :expr, command[:rpc])
-
-        # TODO: commands with args
         struct!(RpcCommand, data)
 
       Keyword.has_key?(command, :eval) ->
         validate_rpc_or_eval_command!(command[:eval], :eval)
         data = Keyword.put(data, :expr, command[:eval])
-
-        # TODO: commands with args
         struct!(EvalCommand, data)
 
       Keyword.has_key?(command, :commands) ->
@@ -204,7 +203,6 @@ defmodule Relexe.Steps.Build.PackAndBuild.Commands do
         commands = Keyword.fetch!(command, :commands)
         parsed_commands = parse(commands, release_name, os)
         data = Keyword.put(data, :commands, parsed_commands)
-
         struct!(CompoundCommand, data)
 
       true ->
