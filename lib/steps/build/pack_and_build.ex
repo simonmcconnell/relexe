@@ -49,7 +49,7 @@ defmodule Relexe.Steps.Build.PackAndBuild do
       if context.target.debug? do
         ["-Dtarget=#{build_triplet}"]
       else
-        ["-Dtarget=#{build_triplet}", "-Drelease-small=true"]
+        ["-Dtarget=#{build_triplet}", "-Doptimize=ReleaseSmall"]
       end
 
     create_metadata_file(context.self_dir, zig_build_args, context.mix_release)
