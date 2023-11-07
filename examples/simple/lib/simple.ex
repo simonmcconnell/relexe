@@ -18,7 +18,8 @@ defmodule Simple do
     :ok
   end
 
-  def break_something do
-    IO.puts("broke something!")
+  def raise_exception do
+    raise "exception"
+    Process.sleep(2000)
   end
 end

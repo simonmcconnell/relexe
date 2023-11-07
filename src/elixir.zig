@@ -50,10 +50,11 @@ const Arg = enum {
     @"--erl-config",
     @"--logger-otp-reports",
     @"--logger-sasl-reports",
+    @"--name",
     @"--sname",
     @"--vm-args",
     @"--erl",
-    // @"-mode", DEPRECATED?
+    // @"-mode", DEPRECATED?  is an arg to erl...
     @"--pipe-to",
 };
 
@@ -74,17 +75,22 @@ pub fn elixir(allocator: Allocator, rel: Release, args: []const []const u8) !voi
     const erts_bin = try fs.path.join(allocator, &[_][]const u8{ rel.root, erts_dir, "bin" });
 
     var arg: ?[]const u8 = undefined;
+    var arg1: ?[]const u8 = undefined;
+    var arg2: ?[]const u8 = undefined;
 
     while (true) {
         arg = args_iter.next() catch break;
         if (arg == null) break;
-        if (mem.eql(u8, arg, "")) break;
+        if (mem.eql(u8, arg.?, "")) break;
         if (endLoop) {
-            try ex.append(arg);
+            try ex.append(arg.?);
             continue;
         }
 
-        var argenum = std.meta.stringToEnum(Arg, arg) orelse return;
+        arg1 = undefined;
+        arg2 = undefined;
+
+        var argenum = std.meta.stringToEnum(Arg, arg.?) orelse return;
 
         switch (argenum) {
             // execution options
@@ -102,50 +108,63 @@ pub fn elixir(allocator: Allocator, rel: Release, args: []const []const u8) !voi
 
             // eval paramters
             .@"-e", .@"--eval", .@"--rpc-eval" => {
-                appendArgs(&.{arg}, 1, arg, &args_iter, &ex);
+                arg1 = args_iter.next() catch fatal("{s} requires an argument", .{arg});
+                try ex.appendSlice(&.{ arg.?, arg1.? });
             },
 
             // elixir parameters
             .@"-r", .@"-pr", .@"-pa", .@"-pz", .@"--remsh", .@"--dot-iex", .@"--dbg" => {
-                appendArgs(&.{arg}, 1, arg, &args_iter, &ex);
+                arg1 = args_iter.next() catch fatal("{s} requires an argument", .{arg});
+                try ex.appendSlice(&.{ arg.?, arg1.? });
             },
             .@"-v", .@"--version", .@"--no-halt" => {
-                try ex.append(arg);
+                try ex.append(arg.?);
             },
 
             // erlang parameters
             .@"--boot" => {
-                appendArgs(&.{"-boot"}, 1, arg, &args_iter, &erl);
+                arg1 = args_iter.next() catch fatal("{s} requires an argument", .{arg});
+                try erl.appendSlice(&.{ "-boot", arg1.? });
             },
             .@"--boot-var" => {
-                appendArgs(&.{"-boot_var"}, 2, arg, &args_iter, &erl);
+                arg1 = args_iter.next() catch fatal("{s} requires two arguments", .{arg});
+                arg2 = args_iter.next() catch fatal("{s} requires two arguments", .{arg});
+                try erl.appendSlice(&.{ "-boot_var", arg1.?, arg2.? });
             },
             .@"--cookie" => {
-                appendArgs(&.{"-setcookie"}, 1, arg, &args_iter, &erl);
+                arg1 = args_iter.next() catch fatal("{s} requires an argument", .{arg});
+                try erl.appendSlice(&.{ "-setcookie", arg1.? });
             },
             .@"--hidden" => {
                 try erl.append("-hidden");
             },
             .@"--erl-config" => {
-                appendArgs(&.{"-config"}, 1, arg, &args_iter, &erl);
+                arg1 = args_iter.next() catch fatal("{s} requires an argument", .{arg});
+                try erl.appendSlice(&.{ "-config", arg1.? });
             },
             .@"--logger-otp-reports" => {
-                appendArgs(&.{ "-logger", "handle_otp_reports" }, 1, arg, &args_iter, &erl);
+                arg1 = args_iter.next() catch fatal("{s} requires an argument", .{arg});
+                try erl.appendSlice(&.{ "-logger", "handle_otp_reports", arg1.? });
             },
             .@"--logger-sasl-reports" => {
-                appendArgs(&.{ "-logger", "handle_sasl_reports" }, 1, arg, &args_iter, &erl);
+                arg1 = args_iter.next() catch fatal("{s} requires an argument", .{arg});
+                try erl.appendSlice(&.{ "-logger", "handle_sasl_reports", arg1.? });
             },
             .@"--name" => {
-                appendArgs(&.{"-name"}, 1, arg, &args_iter, &erl);
+                arg1 = args_iter.next() catch fatal("{s} requires an argument", .{arg});
+                try erl.appendSlice(&.{ "-name", arg1.? });
             },
             .@"--sname" => {
-                appendArgs(&.{"-sname"}, 1, arg, &args_iter, &erl);
+                arg1 = args_iter.next() catch fatal("{s} requires an argument", .{arg});
+                try erl.appendSlice(&.{ "-sname", arg1.? });
             },
             .@"--vm-args" => {
-                appendArgs(&.{"-args_file"}, 1, arg, &args_iter, &erl);
+                arg1 = args_iter.next() catch fatal("{s} requires an argument", .{arg});
+                try erl.appendSlice(&.{ "-args_file", arg1.? });
             },
             .@"--erl" => {
-                appendArgs(&.{}, 0, arg, &args_iter, &before_extra);
+                arg1 = args_iter.next() catch fatal("{s} requires an argument", .{arg});
+                try before_extra.appendSlice(&.{arg1.?});
             },
             .@"--pipe-to" => {
                 if (builtin.os.tag == .windows) fatal("--pipe-to option is not supported on Windows", .{});
@@ -153,12 +172,12 @@ pub fn elixir(allocator: Allocator, rel: Release, args: []const []const u8) !voi
             },
             else => {
                 endLoop = true;
-                try ex.append(arg);
+                try ex.append(arg.?);
             },
         }
     }
 
-    //// expand erl libs - this doesn't get called in the release's batch file - doesn't exist in the 1.15.7 batch file
+    //// expand erl libs - this doesn't get called in the rel's batch file - doesn't exist in the 1.15.7 batch file
     // var ext_libs = String.init(allocator);
     // defer ext_libs.deinit();
     // var lib_dir_path = try fs.path.resolve(allocator, &[_][]const u8{ rel.root, "lib" });
@@ -177,9 +196,10 @@ pub fn elixir(allocator: Allocator, rel: Release, args: []const []const u8) !voi
     // }
 
     // enable virtual terminal sequences
+    // https://learn.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences#example-of-select-anniversary-update-features
     // https://docs.microsoft.com/en-us/windows/console/classic-vs-vt
     if (builtin.os.tag == .windows) {
-        if (win_ansi.enable_virtual_term()) {
+        if (win_ansi.enable_virtual_terminal() == 1) {
             try before_extra.insertSlice(0, &.{ "-elixir", "ansi_enabled", "true" });
         }
     }
@@ -215,31 +235,17 @@ pub fn elixir(allocator: Allocator, rel: Release, args: []const []const u8) !voi
     try putReleaseValues(&env_map, rel);
     try putDotEnvValues(allocator, &env_map, rel);
 
-    for (argv.items, 0..) |a, i| log.debug("erl.exe arg[{d: >2}] {s}", .{ i, a });
+    for (argv.items, 0..) |a, i| log.info("erl.exe arg[{d: >2}] {s}", .{ i, a });
 
-    const child_proc = try std.ChildProcess.init(argv.items, allocator);
+    var child_proc = process.Child.init(argv.items, allocator);
     child_proc.env_map = &env_map;
-    child_proc.stdin_behavior = .Inherit;
-    child_proc.stdout_behavior = .Inherit;
     child_proc.cwd = rel.vsn_dir;
+
     const exec_result = try child_proc.spawnAndWait();
     log.debug("Elixir run result: {s}", .{exec_result});
 }
 
-fn appendArgs(prefix_args: [][]const u8, arg_count: usize, arg: []const u8, args_iter: *SliceIterator, args_slice: *std.ArrayList([]const u8)) void {
-    var i: usize = 0;
-    var argi: ?[]const u8 = undefined;
-
-    try args_slice.appendSlice(&.{prefix_args});
-
-    while (i < arg_count) {
-        argi = args_iter.next() orelse fatal("{s} requires an argument", .{arg});
-        args_slice.append(argi);
-        i += 1;
-    }
-}
-
-fn putReleaseValues(map: *std.BufMap, rel: Release) !void {
+fn putReleaseValues(map: *process.EnvMap, rel: Release) !void {
     try map.put("RELEASE_BOOT_SCRIPT", rel.boot_script);
     try map.put("RELEASE_BOOT_SCRIPT_CLEAN", rel.boot_script_clean);
     try map.put("RELEASE_COMMAND", rel.command);
@@ -279,8 +285,8 @@ fn putReleaseValues(map: *std.BufMap, rel: Release) !void {
     log.debug("RELEASE_VSN_DIR: {s}", .{rel.vsn_dir});
 }
 
-fn putDotEnvValues(allocator: Allocator, map: *std.BufMap, rel: Release) !void {
-    // load values from .env.<command> or .env in release version directory ...
+fn putDotEnvValues(allocator: Allocator, map: *process.EnvMap, rel: Release) !void {
+    // load values from .env.<command> or .env in rel version directory ...
     const dotenv_command = try std.fmt.allocPrint(allocator, ".env.{s}", .{rel.command});
     const dotenv_command_path = try fs.path.join(allocator, &[_][]const u8{ rel.vsn_dir, dotenv_command });
     const dotenv_path = try fs.path.join(allocator, &[_][]const u8{ rel.vsn_dir, ".env" });

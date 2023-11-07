@@ -10,6 +10,7 @@ defmodule Simple.Release do
 
   def migrate do
     IO.puts("migrating...")
+    Process.sleep(1000)
   end
 
   def rollback(repo, version) do
@@ -26,5 +27,11 @@ defmodule Simple.Release do
   defp load_app do
     IO.puts("loading app")
     Application.load(@app)
+  end
+
+  def write_to_file do
+    IO.puts("writing to file")
+    File.write!("C:\\Temp\\test.txt", "test")
+    Process.sleep(1000)
   end
 end

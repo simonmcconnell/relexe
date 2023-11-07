@@ -7,7 +7,7 @@ const log = std.log;
 const mem = std.mem;
 const process = std.process;
 
-const elixir = @import("elixir.zig");
+const elixir = @import("elixir.zig").elixir;
 const DotEnv = @import("dotenv.zig").DotEnv;
 const utils = @import("utils.zig");
 const fatal = utils.fatal;
@@ -109,8 +109,9 @@ fn getEnv(allocator: Allocator, map: *std.BufMap, key: []const u8, default: []co
 }
 
 pub fn start(allocator: Allocator, rel: Release) !void {
-    var args = try std.ArrayList([]const u8).initCapacity(allocator, 14);
+    var args = std.ArrayList([]const u8).init(allocator);
     defer args.deinit();
+
     try args.appendSlice(&.{
         rel.extra,
         "--cookie",
@@ -124,8 +125,8 @@ pub fn start(allocator: Allocator, rel: Release) !void {
         });
     }
     try args.appendSlice(&.{
-        "-mode",
-        rel.mode,
+        "--erl",
+        try fmt.allocPrint(allocator, "-mode {s}", .{rel.mode}),
         "--erl-config",
         rel.sys_config,
         "--boot",

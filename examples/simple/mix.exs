@@ -32,20 +32,20 @@ defmodule Simple.MixProject do
                 eval: {Simple.Release, :create_admin, [:username, :password]}
               ],
               [
-                name: "create-admin2",
-                help: "Create an admin user",
-                eval: {Simple.Release, :create_admin, [:username, :password]}
-              ],
-              [
-                name: "break-something",
-                help: "Break something!",
-                rpc: "Simple.break_something()"
-              ],
-              [
                 name: "create-admin-rpc",
                 help: "Create an admin user",
                 rpc: {Simple.Release, :create_admin, [:username, :password]}
-              ]
+              ],
+              [
+                name: "raise-exception",
+                help: "Raise an exception",
+                eval: "Simple.Release.raise_exception()"
+              ],
+              [
+                name: "write-to-file",
+                help: "Writes to C:/temp/test.txt",
+                eval: "Simple.Release.write_to_file()"
+              ],
             ],
             env: [windows: [RELEASE_DISTRIBUTION: "sname", RELEASE_NAME: "bananas_release"]],
             targets: [windows: [os: :windows, cpu: :x86_64]]
