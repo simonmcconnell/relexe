@@ -29,6 +29,11 @@ defmodule Simple.Release do
     Application.load(@app)
   end
 
+  def raise_exception do
+    raise "exception"
+    Process.sleep(1000)
+  end
+
   def write_to_file do
     IO.puts("writing to file")
     File.write!("C:\\Temp\\test.txt", "test")

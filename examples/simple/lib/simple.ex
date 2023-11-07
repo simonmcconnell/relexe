@@ -17,9 +17,4 @@ defmodule Simple do
     IO.puts("created admin '#{username}' with password '#{password}'")
     :ok
   end
-
-  def raise_exception do
-    raise "exception"
-    Process.sleep(2000)
-  end
 end
